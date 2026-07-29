@@ -344,31 +344,16 @@
 
 <script>
   // ---------------------------------------------------------------
-  // Platzhalter-Daten. Später hier durch einen echten Abruf ersetzen,
-  // z.B.:
-  //
-  //   async function loadData() {
-  //     const res = await fetch("https://DEINE-FIREBASE-URL/.json");
-  //     const data = await res.json();
-  //     render(data);
-  //   }
-  //
-  // und loadData() z.B. alle 60 Sekunden per setInterval aufrufen.
+ async function loadData() {
+  const res = await fetch("https://meteorologia-377e2-default-rtdb.europe-west1.firebasedatabase.app/");
+  const data = await res.json();
+  render(data);
+}
+
+
   // ---------------------------------------------------------------
 
-  const mockData = {
-    temperature: 21.4,
-    feelsLike: 20.8,
-    trend: "steigend",
-    pressure: 1016,
-    pressureTrend: "stabil",
-    humidity: 58,
-    windSpeed: 14,
-    windDirectionDeg: 225,
-    windDirectionLabel: "SW",
-    uvIndex: 4,
-    rainLast24h: 0.0
-  };
+
 
   function windDirectionText(deg) {
     const dirs = ["N", "NO", "O", "SO", "S", "SW", "W", "NW"];
@@ -413,8 +398,8 @@
 
   render(mockData);
 
-  // Beispiel für regelmäßige Aktualisierung, sobald echte Daten angebunden sind:
-  // setInterval(loadData, 60000);
+  loadData();
+setInterval(loadData, 60000); // alle 60 Sekunden neu laden
 </script>
 
 </body>
