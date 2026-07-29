@@ -281,10 +281,6 @@
     <div class="panel">
       <p class="instrument-label">Temperatur</p>
       <div class="temp-value" id="temp-value">—<span class="unit">°C</span></div>
-      <div class="temp-meta">
-        <span>Gefühlt <b id="temp-feels">—</b></span>
-        <span>Trend <b id="temp-trend">—</b></span>
-      </div>
     </div>
 
     <div class="panel compass-wrap">
@@ -343,63 +339,74 @@
 </div>
 
 <script>
-  // ---------------------------------------------------------------
- async function loadData() {
-  const res = await fetch("https://meteorologia-377e2-default-rtdb.europe-west1.firebasedatabase.app/");
-  const data = await res.json();
-  render(data);
-}
+  // Wichtig: Pfad + ".json" -- das ESP32 schreibt nach /messwerte.json,
+  // die Website muss also von genau dort lesen, nicht von der Wurzel.
+  const FIREBASE_URL = "https://meteorologia-377e2-default-rtdb.europe-west1.firebasedatabase.app/messwerte.json";
 
-
-  // ---------------------------------------------------------------
-
-
+  async function loadData() {
+    try {
+      const res = await fetch(FIREBASE_URL);
+      const data = await res.json();
+      if (!data) {
+        console.warn("Noch keine Daten in Firebase vorhanden.");
+        return;
+      }
+      render(data);
+    } catch (err) {
+      console.error("Fehler beim Laden der Firebase-Daten:", err);
+    }
+  }
 
   function windDirectionText(deg) {
     const dirs = ["N", "NO", "O", "SO", "S", "SW", "W", "NW"];
     return dirs[Math.round(deg / 45) % 8];
   }
 
+  // Zeigt "—" statt eines Werts, solange der Sensor noch nicht
+  // verdrahtet ist (ESP32 sendet dafür -1, siehe .ino).
+  function formatOrPlaceholder(value, decimals, unit) {
+    if (value === undefined || value === null || value === -1) return "—";
+    return value.toFixed(decimals) + (unit ? '<span class="unit">' + unit + '</span>' : "");
+  }
+
   function render(data) {
     document.getElementById("temp-value").innerHTML =
-      data.temperature.toFixed(1) + '<span class="unit">°C</span>';
-    document.getElementById("temp-feels").textContent = data.feelsLike.toFixed(1) + " °C";
-    document.getElementById("temp-trend").textContent = data.trend;
+      formatOrPlaceholder(data.temperature, 1, "°C");
 
     document.getElementById("pressure-value").innerHTML =
-      data.pressure + '<span class="unit">hPa</span>';
-    document.getElementById("pressure-note").textContent = "Trend: " + data.pressureTrend;
+      formatOrPlaceholder(data.pressure, 1, "hPa");
 
     document.getElementById("humidity-value").innerHTML =
-      data.humidity + '<span class="unit">%</span>';
+      formatOrPlaceholder(data.humidity, 1, "%");
     document.getElementById("humidity-note").textContent =
-      data.humidity > 70 ? "hoch" : data.humidity < 30 ? "niedrig" : "normal";
+      data.humidity == null ? "—" : (data.humidity > 70 ? "hoch" : data.humidity < 30 ? "niedrig" : "normal");
 
-    document.getElementById("wind-speed").textContent = data.windSpeed + " km/h";
-    document.getElementById("wind-dir-label").textContent =
-      data.windDirectionLabel || windDirectionText(data.windDirectionDeg);
-    document.getElementById("compass-needle").style.setProperty("--wind-deg", data.windDirectionDeg + "deg");
-    document.getElementById("compass-needle").style.transform = "rotate(" + data.windDirectionDeg + "deg)";
+    const windSpeedText = (data.windSpeed === -1 || data.windSpeed == null) ? "— km/h" : data.windSpeed + " km/h";
+    document.getElementById("wind-speed").textContent = windSpeedText;
+    document.getElementById("wind-dir-label").textContent = windDirectionText(data.windDirectionDeg || 0);
+    document.getElementById("compass-needle").style.transform = "rotate(" + (data.windDirectionDeg || 0) + "deg)";
 
     const uvCard = document.getElementById("uv-card");
-    document.getElementById("uv-value").textContent = data.uvIndex;
-    document.getElementById("uv-note").textContent =
-      data.uvIndex >= 6 ? "hoch — Schutz empfohlen" : data.uvIndex >= 3 ? "mäßig" : "niedrig";
-    uvCard.classList.toggle("uv-high", data.uvIndex >= 6);
+    const uvKnown = data.uvIndex !== -1 && data.uvIndex != null;
+    document.getElementById("uv-value").textContent = uvKnown ? data.uvIndex : "—";
+    document.getElementById("uv-note").textContent = uvKnown
+      ? (data.uvIndex >= 6 ? "hoch — Schutz empfohlen" : data.uvIndex >= 3 ? "mäßig" : "niedrig")
+      : "noch kein Sensor";
+    uvCard.classList.toggle("uv-high", uvKnown && data.uvIndex >= 6);
 
     const rainCard = document.getElementById("rain-card");
-    document.getElementById("rain-value").innerHTML =
-      data.rainLast24h.toFixed(1) + '<span class="unit">mm</span>';
-    rainCard.classList.toggle("rain-active", data.rainLast24h > 0);
+    const rainKnown = data.rainLast24h !== -1 && data.rainLast24h != null;
+    document.getElementById("rain-value").innerHTML = rainKnown
+      ? data.rainLast24h.toFixed(1) + '<span class="unit">mm</span>'
+      : "—";
+    rainCard.classList.toggle("rain-active", rainKnown && data.rainLast24h > 0);
 
     document.getElementById("last-update").textContent =
       "Letzte Aktualisierung: " + new Date().toLocaleTimeString("de-DE");
   }
 
-  render(mockData);
-
   loadData();
-setInterval(loadData, 60000); // alle 60 Sekunden neu laden
+  setInterval(loadData, 60000); // alle 60 Sekunden neu laden
 </script>
 
 </body>
