@@ -176,37 +176,6 @@
             margin-top: 4px;
         }
 
-        /* Wind Kompass Design */
-        .wind-display {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .compass-circle {
-            width: 45px;
-            height: 45px;
-            border: 2px dashed var(--text-muted);
-            border-radius: 50%;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 5px;
-        }
-
-        .compass-needle {
-            width: 4px;
-            height: 25px;
-            background: var(--accent-purple);
-            position: absolute;
-            top: 8px;
-            border-radius: 2px;
-            transform-origin: bottom center;
-            transition: transform 0.5s ease;
-        }
-
         .right-column {
             display: flex;
             flex-direction: column;
@@ -375,7 +344,6 @@
                         <div id="last-update">Update: --:--</div>
                     </div>
                     
-                    <!-- Live Warnungen -->
                     <div class="warning-badges" id="warning-badges">
                         <div class="badge" id="badge-frost"><i class="fas fa-snowflake"></i> Frost-Warnung</div>
                         <div class="badge" id="badge-storm"><i class="fas fa-wind"></i> Rascher Druckfall</div>
@@ -407,15 +375,11 @@
                         <div class="metric-value" id="press-val">-- hPa</div>
                     </div>
                     
-                    <!-- Animierter Wind Kompass Card -->
+                    <!-- Klassische Windrichtungs-Karte mit Kompass Icon -->
                     <div class="neu-card metric-card">
-                        <div class="wind-display">
-                            <div class="compass-circle">
-                                <div class="compass-needle" id="compass-needle"></div>
-                            </div>
-                            <div class="metric-title">Windrichtung</div>
-                            <div class="metric-value" id="wind-dir-val">--</div>
-                        </div>
+                        <i class="far fa-compass"></i>
+                        <div class="metric-title">Windrichtung</div>
+                        <div class="metric-value" id="wind-dir-val">--</div>
                     </div>
 
                     <div class="neu-card metric-card">
@@ -431,10 +395,10 @@
                         <div class="offline-tag" id="uv-tag" style="display:none;">Offline</div>
                     </div>
                     <div class="neu-card metric-card">
-                        <i class="fas fa-battery-three-quarters" style="color: var(--accent-green)"></i>
-                        <div class="metric-title">Powerbank / Akku</div>
-                        <div class="metric-value" id="batt-val">-- V</div>
-                        <div style="font-size: 9px; color: var(--text-muted);" id="wifi-rssi">RSSI: -- dBm</div>
+                        <i class="fas fa-cloud-rain"></i>
+                        <div class="metric-title">Niederschlag</div>
+                        <div class="metric-value" id="rain-val">--</div>
+                        <div class="offline-tag" id="rain-tag" style="display:none;">Offline</div>
                     </div>
                 </div>
             </div>
@@ -524,7 +488,6 @@
             if (!pastEntry || pastEntry.pressure == null || latest.pressure == null) return "--";
             const diff = latest.pressure - pastEntry.pressure;
             
-            // Druckwarnung-Logik (wenn Druck innerhalb 3h um mehr als 2 hPa fällt)
             const badgeStorm = document.getElementById('badge-storm');
             if (diff <= -2.0) {
                 badgeStorm.style.display = "inline-flex";
@@ -552,14 +515,9 @@
                 document.getElementById('hum-val').innerText = data.humidity ? data.humidity.toFixed(0) + " %" : "-- %";
                 document.getElementById('press-val').innerText = data.pressure ? data.pressure.toFixed(0) + " hPa" : "-- hPa";
                 
-                // Windrichtung Text & Kompass Nadel Rotation
-                const windDeg = data.windDirectionDeg || 0;
-                document.getElementById('wind-dir-val').innerText = getWindDirectionText(windDeg);
-                document.getElementById('compass-needle').style.transform = `rotate(${windDeg}deg)`;
-
+                document.getElementById('wind-dir-val').innerText = getWindDirectionText(data.windDirectionDeg);
                 document.getElementById('dew-point').innerText = calculateDewPoint(data.temperature, data.humidity);
 
-                // Frost Warnung Logik
                 const badgeFrost = document.getElementById('badge-frost');
                 if (data.temperature <= 3) {
                     badgeFrost.style.display = "inline-flex";
@@ -567,12 +525,9 @@
                     badgeFrost.style.display = "none";
                 }
 
-                // Health Monitor Werte (Powerbank / RSSI)
-                document.getElementById('batt-val').innerText = data.batteryVoltage ? data.batteryVoltage.toFixed(2) + " V" : "5.00 V";
-                document.getElementById('wifi-rssi').innerText = data.rssi ? `RSSI: ${data.rssi} dBm` : "WLAN: Aktiv";
-
                 handlePlaceholderSensor('wind-speed-val', 'wind-speed-tag', data.windSpeed, " km/h");
                 handlePlaceholderSensor('uv-val', 'uv-tag', data.uvIndex, "");
+                handlePlaceholderSensor('rain-val', 'rain-tag', data.rainLast24h, " mm");
 
                 const date = new Date(data.timestamp || Date.now());
                 document.getElementById('last-update').innerText = "Update: " + date.toLocaleTimeString("de-DE", {hour: '2-digit', minute:'2-digit'});
@@ -652,7 +607,6 @@
             updateChart();
         }
 
-        // CSV Export Funktion
         function exportCSV() {
             if (!currentChartData || !currentChartData.length) {
                 alert("Keine Daten zum Exportieren vorhanden.");
