@@ -370,7 +370,7 @@
         const FIREBASE_LATEST = "https://meteorologia-377e2-default-rtdb.europe-west1.firebasedatabase.app/messwerte.json";
         
         // LIMIT erhöht auf 672. Bei 4 Messungen/h * 24h * 7 Tage = 672 Messungen (Historie der letzten 7 Tage)
-        const FIREBASE_HISTORY = "https://meteorologia-377e2-default-rtdb.europe-west1.firebasedatabase.app/historie.json?orderBy=%22timestamp%22&limitToLast=672";
+        const FIREBASE_HISTORY = "https://meteorologia-377e2-default-rtdb.europe-west1.firebasedatabase.app/historie.json?orderBy=%22timestamp%22&limitToLast=10080";
 
         // Hilfsfunktion: Windrichtung aus Grad berechnen
         function getWindDirection(deg) {
@@ -421,7 +421,7 @@
                 if (values.length === 0) return;
                 
                 // ---- CHARTS (Letzte 24 Stunden = ca. 96 Messungen) ----
-                const last24h = values.slice(-96); 
+                const last24h = values.slice(-1440); 
                 const labels24h = last24h.map(v => new Date(v.timestamp).toLocaleTimeString("de-DE", {hour: '2-digit', minute:'2-digit'}));
                 const temps24h = last24h.map(v => v.temperature);
                 const hums24h = last24h.map(v => v.humidity);
