@@ -6,6 +6,7 @@
 <title>Wetterstation — Live-Daten</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <style>
   :root {
     --bg: #1B2430;
@@ -246,6 +247,39 @@
     margin-top: 6px;
   }
 
+  /* ---------- Verlauf / Chart ---------- */
+  .chart-panel {
+    margin-top: 20px;
+  }
+
+  .chart-panel canvas {
+    max-height: 280px;
+  }
+
+  .chart-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .chart-toggle button {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: transparent;
+    border: 1px solid var(--panel-border);
+    color: var(--text-dim);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .chart-toggle button.active {
+    color: var(--bg);
+    background: var(--accent-teal);
+    border-color: var(--accent-teal);
+  }
+
   /* ---------- Footer ---------- */
   footer {
     margin-top: 32px;
@@ -332,6 +366,16 @@
     </div>
   </section>
 
+  <section class="panel chart-panel">
+    <p class="instrument-label">Verlauf</p>
+    <div class="chart-toggle">
+      <button data-metric="temperature" class="active">Temperatur</button>
+      <button data-metric="humidity">Luftfeuchtigkeit</button>
+      <button data-metric="pressure">Luftdruck</button>
+    </div>
+    <canvas id="history-chart" height="90"></canvas>
+  </section>
+
   <footer>
     Daten vom ESP32 · aktualisiert automatisch
   </footer>
@@ -405,8 +449,96 @@
       "Letzte Aktualisierung: " + new Date().toLocaleTimeString("de-DE");
   }
 
+  // -------------------- Verlaufs-Diagramm --------------------
+  const HISTORY_URL =
+    "https://meteorologia-377e2-default-rtdb.europe-west1.firebasedatabase.app/historie.json" +
+    "?orderBy=%22timestamp%22&limitToLast=100"; // die letzten 100 Messungen
+
+  const metricLabels = {
+    temperature: { label: "Temperatur (°C)", color: "#E8A33D" },
+    humidity:    { label: "Luftfeuchtigkeit (%)", color: "#4FA8A0" },
+    pressure:    { label: "Luftdruck (hPa)", color: "#8FA0B3" }
+  };
+
+  let historyChart = null;
+  let currentMetric = "temperature";
+  let cachedHistory = [];
+
+  async function loadHistory() {
+    try {
+      const res = await fetch(HISTORY_URL);
+      const data = await res.json();
+      if (!data) return;
+
+      // data ist ein Objekt { autoKey1: {...}, autoKey2: {...}, ... }
+      // -> in ein Array umwandeln und nach Zeit sortieren
+      cachedHistory = Object.values(data).sort((a, b) => a.timestamp - b.timestamp);
+      renderChart(currentMetric);
+    } catch (err) {
+      console.error("Fehler beim Laden der Historie:", err);
+    }
+  }
+
+  function renderChart(metric) {
+    if (!cachedHistory.length) return;
+
+    const labels = cachedHistory.map(entry =>
+      new Date(entry.timestamp).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+    );
+    const values = cachedHistory.map(entry => entry[metric]);
+    const meta = metricLabels[metric];
+
+    if (historyChart) {
+      historyChart.data.labels = labels;
+      historyChart.data.datasets[0].data = values;
+      historyChart.data.datasets[0].label = meta.label;
+      historyChart.data.datasets[0].borderColor = meta.color;
+      historyChart.update();
+      return;
+    }
+
+    const ctx = document.getElementById("history-chart").getContext("2d");
+    historyChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [{
+          label: meta.label,
+          data: values,
+          borderColor: meta.color,
+          backgroundColor: "transparent",
+          tension: 0.3,
+          pointRadius: 0,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { ticks: { color: "#8FA0B3", maxTicksLimit: 8 }, grid: { color: "#34455A" } },
+          y: { ticks: { color: "#8FA0B3" }, grid: { color: "#34455A" } }
+        },
+        plugins: {
+          legend: { labels: { color: "#E8EDF2" } }
+        }
+      }
+    });
+  }
+
+  document.querySelectorAll(".chart-toggle button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".chart-toggle button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentMetric = btn.dataset.metric;
+      renderChart(currentMetric);
+    });
+  });
+
   loadData();
-  setInterval(loadData, 60000); // alle 60 Sekunden neu laden
+  loadHistory();
+  setInterval(loadData, 60000);    // aktuelle Werte alle 60 Sekunden
+  setInterval(loadHistory, 300000); // Verlauf alle 5 Minuten neu laden (muss nicht so oft sein wie die Live-Werte)
 </script>
 
 </body>
