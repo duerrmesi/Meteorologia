@@ -18,6 +18,8 @@
             --text-muted: #8b95a5;
             --accent-orange: linear-gradient(145deg, #ff9b26, #e65c00);
             --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-purple: #8b5cf6;
         }
 
         * {
@@ -31,7 +33,7 @@
             background-color: var(--bg-color);
             color: var(--text-main);
             min-height: 100vh;
-            padding: 30px;
+            padding: 25px;
             display: flex;
             justify-content: center;
         }
@@ -43,8 +45,8 @@
 
         .dashboard-header {
             text-align: center;
-            margin-bottom: 30px;
-            font-size: 28px;
+            margin-bottom: 25px;
+            font-size: 26px;
             font-weight: 600;
             letter-spacing: 2px;
             text-transform: uppercase;
@@ -52,11 +54,11 @@
 
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 30px;
+            grid-template-columns: 360px 1fr;
+            gap: 25px;
         }
 
-        /* --- Neumorphic Card Base --- */
+        /* Neumorphism Cards */
         .neu-card {
             background: var(--card-bg);
             border-radius: 20px;
@@ -66,67 +68,66 @@
             padding: 20px;
         }
 
-        /* --- Left Column --- */
+        /* Linke Spalte */
         .left-column {
             display: flex;
             flex-direction: column;
-            gap: 30px;
+            gap: 25px;
         }
 
         .orange-card {
             background: var(--accent-orange);
-            border-radius: 30px;
-            padding: 30px;
+            border-radius: 25px;
+            padding: 25px;
             box-shadow: 
                 10px 10px 20px rgba(0,0,0,0.4), 
                 -5px -5px 15px rgba(255, 155, 38, 0.2),
                 inset 2px 2px 5px rgba(255,255,255,0.3);
             color: white;
             position: relative;
-            overflow: hidden;
         }
 
         .orange-card .header-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 14px;
-            margin-bottom: 20px;
-        }
-        
-        .orange-card .location {
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            font-size: 13px;
         }
 
         .orange-card .temp-large {
-            font-size: 64px;
+            font-size: 60px;
             font-weight: 700;
             line-height: 1;
-            margin: 20px 0 25px;
+            margin: 20px 0 15px;
         }
 
-        .location-pills {
-            display: flex;
-            gap: 15px;
+        .calculated-pills {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
         }
 
         .pill {
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.3);
-            padding: 8px 15px;
-            border-radius: 20px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 8px 12px;
+            border-radius: 12px;
             font-size: 12px;
             backdrop-filter: blur(5px);
         }
 
-        /* 2x3 Grid */
+        .pill span {
+            display: block;
+            font-size: 10px;
+            opacity: 0.8;
+        }
+
+        /* Metrics Grid */
         .metrics-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            gap: 15px;
         }
 
         .metric-card {
@@ -134,40 +135,49 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px 10px;
+            padding: 18px 10px;
             text-align: center;
-            border-radius: 15px;
+            position: relative;
         }
 
         .metric-card i {
-            font-size: 24px;
-            margin-bottom: 10px;
+            font-size: 22px;
+            margin-bottom: 8px;
             color: var(--text-muted);
         }
 
         .metric-title {
-            font-size: 12px;
+            font-size: 11px;
             color: var(--text-muted);
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
 
         .metric-value {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 600;
         }
 
-        /* --- Right Column --- */
+        .offline-tag {
+            font-size: 9px;
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 4px;
+        }
+
+        /* Rechte Spalte */
         .right-column {
             display: flex;
             flex-direction: column;
-            gap: 30px;
+            gap: 25px;
         }
 
-        /* Top Days Grid */
+        /* Tage Übersicht */
         .days-grid {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
-            gap: 15px;
+            gap: 12px;
         }
 
         .day-card {
@@ -175,93 +185,128 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 15px;
+            padding: 12px 8px;
             border-radius: 15px;
             background: var(--card-bg);
-            box-shadow: 5px 5px 10px var(--card-shadow-dark), -5px -5px 10px var(--card-shadow-light);
-            transition: all 0.3s ease;
-        }
-        
-        .day-card:hover {
-            box-shadow: inset 5px 5px 10px var(--card-shadow-dark), inset -5px -5px 10px var(--card-shadow-light);
+            box-shadow: 4px 4px 8px var(--card-shadow-dark), -4px -4px 8px var(--card-shadow-light);
+            text-align: center;
         }
 
         .day-card .day-name {
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 500;
-            margin-bottom: 8px;
             color: var(--text-muted);
+            margin-bottom: 4px;
         }
 
         .day-card .day-temp {
-            font-size: 18px;
+            font-size: 15px;
             font-weight: 700;
             color: #ff9b26;
         }
 
-        /* Charts */
-        .chart-container {
-            height: 250px;
-            width: 100%;
-            padding: 20px;
-        }
-
-        .bottom-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 30px;
-        }
-
-        /* Lists */
-        .history-list {
+        /* Multi-Chart Container */
+        .chart-section {
             display: flex;
             flex-direction: column;
             gap: 15px;
-            padding: 20px;
-        }
-        
-        .history-list-title {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
         }
 
-        .list-item {
+        .chart-controls {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 14px;
-            padding: 8px 0;
-            border-bottom: 1px solid var(--card-shadow-light);
-        }
-        
-        .list-item:last-child {
-            border-bottom: none;
-        }
-
-        .min-max-bar {
-            display: flex;
-            align-items: center;
+            flex-wrap: wrap;
             gap: 10px;
-            font-family: monospace;
-            font-size: 13px;
+        }
+
+        .chart-tabs, .timeframe-tabs {
+            display: flex;
+            background: var(--bg-color);
+            padding: 4px;
+            border-radius: 12px;
+            gap: 4px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background: var(--card-bg);
+            color: var(--text-main);
+            box-shadow: 2px 2px 5px var(--card-shadow-dark);
+        }
+
+        .timeframe-btn.active {
+            background: #ff9b26;
+            color: white;
+        }
+
+        .chart-canvas-container {
+            height: 300px;
+            width: 100%;
+            position: relative;
+        }
+
+        /* Bottom Row */
+        .bottom-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+
+        .history-list-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .history-grid-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .min-max-card {
+            background: var(--bg-color);
+            padding: 12px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .min-max-card .date {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .min-max-values {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            font-weight: 600;
         }
 
         .min-val { color: var(--accent-blue); }
         .max-val { color: #ff9b26; }
 
         @media (max-width: 1024px) {
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-            .days-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-            .bottom-row {
-                grid-template-columns: 1fr;
-            }
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .days-grid { grid-template-columns: repeat(3, 1fr); }
+            .history-grid-container { grid-template-columns: repeat(2, 1fr); }
+            .chart-controls { flex-direction: column; align-items: stretch; }
         }
     </style>
 </head>
@@ -272,24 +317,30 @@
         
         <div class="dashboard-grid">
             
-            <!-- Left Column -->
+            <!-- Linke Spalte -->
             <div class="left-column">
                 
-                <!-- Main Orange Card -->
+                <!-- Haupt-Temperatur-Karte -->
                 <div class="orange-card">
                     <div class="header-row">
-                        <div class="location"><i class="fas fa-satellite-dish"></i> Eigene Wetterstation</div>
-                        <div id="last-update">Letztes Update: --:--</div>
+                        <div><i class="fas fa-satellite-dish"></i> Wetterstation</div>
+                        <div id="last-update">Update: --:--</div>
                     </div>
                     <div class="temp-large" id="temp-main">-- °C</div>
                     
-                    <div class="location-pills">
-                        <div class="pill"><i class="fas fa-microchip"></i> ESP32</div>
-                        <div class="pill">BMP085 & DHT11</div>
+                    <div class="calculated-pills">
+                        <div class="pill">
+                            <span>Taupunkt</span>
+                            <strong id="dew-point">-- °C</strong>
+                        </div>
+                        <div class="pill">
+                            <span>Druck-Trend (3h)</span>
+                            <strong id="pressure-trend">--</strong>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Metrics Grid -->
+                <!-- 6 Sensor-Metriken Gitter -->
                 <div class="metrics-grid">
                     <div class="neu-card metric-card">
                         <i class="fas fa-tint"></i>
@@ -309,27 +360,29 @@
                     <div class="neu-card metric-card">
                         <i class="fas fa-wind"></i>
                         <div class="metric-title">Windgeschw.</div>
-                        <div class="metric-value" id="wind-speed-val">-- km/h</div>
+                        <div class="metric-value" id="wind-speed-val">--</div>
+                        <div class="offline-tag" id="wind-speed-tag" style="display:none;">Offline</div>
                     </div>
                     <div class="neu-card metric-card">
                         <i class="fas fa-sun"></i>
                         <div class="metric-title">UV Index</div>
                         <div class="metric-value" id="uv-val">--</div>
+                        <div class="offline-tag" id="uv-tag" style="display:none;">Offline</div>
                     </div>
                     <div class="neu-card metric-card">
                         <i class="fas fa-cloud-rain"></i>
                         <div class="metric-title">Niederschlag</div>
-                        <div class="metric-value" id="rain-val">-- mm</div>
+                        <div class="metric-value" id="rain-val">--</div>
+                        <div class="offline-tag" id="rain-tag" style="display:none;">Offline</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Column -->
+            <!-- Rechte Spalte -->
             <div class="right-column">
                 
-                <!-- 6 Days History (Gemessene Tagesdurchschnitte) -->
+                <!-- 6 Tage Historie (Gemessene Tagesdurchschnitte) -->
                 <div class="days-grid" id="days-history-grid">
-                    <!-- Wird per JS befüllt -->
                     <div class="day-card"><div class="day-name">Lade...</div></div>
                     <div class="day-card"><div class="day-name">Lade...</div></div>
                     <div class="day-card"><div class="day-name">Lade...</div></div>
@@ -338,203 +391,317 @@
                     <div class="day-card"><div class="day-name">Lade...</div></div>
                 </div>
 
-                <!-- Line Chart (Letzte 24h Temperatur) -->
-                <div class="neu-card chart-container">
-                    <canvas id="tempChart"></canvas>
-                </div>
-
-                <!-- Bottom Row -->
-                <div class="bottom-row">
-                    <!-- Bar Chart (Letzte 24h Luftfeuchtigkeit) -->
-                    <div class="neu-card chart-container">
-                        <canvas id="barChart"></canvas>
-                    </div>
-
-                    <!-- Right List (Gemessene Höchst- & Tiefstwerte der letzten Tage) -->
-                    <div class="neu-card history-list">
-                        <div class="history-list-title">
-                            <span>Tages-Extreme</span>
-                            <i class="fas fa-temperature-half" style="color: var(--text-muted)"></i>
+                <!-- Interaktiver Multi-Chart Bereich -->
+                <div class="neu-card chart-section">
+                    <div class="chart-controls">
+                        <!-- Sensor Tabs -->
+                        <div class="chart-tabs">
+                            <button class="tab-btn active" onclick="switchMetric('temperature')">Temp</button>
+                            <button class="tab-btn" onclick="switchMetric('humidity')">Feuchte</button>
+                            <button class="tab-btn" onclick="switchMetric('pressure')">Druck</button>
+                            <button class="tab-btn" onclick="switchMetric('windDirectionDeg')">Wind</button>
+                            <button class="tab-btn" onclick="switchMetric('uvIndex')">UV</button>
+                            <button class="tab-btn" onclick="switchMetric('rainLast24h')">Regen</button>
                         </div>
-                        <div id="min-max-list">
-                            <div class="list-item" style="color: var(--text-muted);">Daten werden berechnet...</div>
+                        <!-- Timeframe Switcher -->
+                        <div class="timeframe-tabs">
+                            <button class="tab-btn timeframe-btn" onclick="switchTimeframe('1h')">1 Std</button>
+                            <button class="tab-btn timeframe-btn active" onclick="switchTimeframe('24h')">24 Std</button>
+                            <button class="tab-btn timeframe-btn" onclick="switchTimeframe('7d')">7 Tage</button>
                         </div>
                     </div>
+
+                    <div class="chart-canvas-container">
+                        <canvas id="mainChart"></canvas>
+                    </div>
                 </div>
+
+                <!-- Untere Reihe: Tages-Extreme -->
+                <div class="neu-card">
+                    <div class="history-list-title">
+                        <span>Gemessene Tages-Extreme (Min / Max)</span>
+                        <i class="fas fa-temperature-half" style="color: var(--text-muted)"></i>
+                    </div>
+                    <div class="history-grid-container" id="min-max-grid">
+                        <div class="min-max-card"><div class="date">Berechne...</div></div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
 
     <script>
-        // ------------------ FIREBASE LOGIC ------------------
+        // ------------------ CONFIG & CONSTANTS ------------------
         const FIREBASE_LATEST = "https://meteorologia-377e2-default-rtdb.europe-west1.firebasedatabase.app/messwerte.json";
-        
-        // LIMIT erhöht auf 672. Bei 4 Messungen/h * 24h * 7 Tage = 672 Messungen (Historie der letzten 7 Tage)
+        // 10080 Punkte = 7 Tage bei 1 Messung pro Minute
         const FIREBASE_HISTORY = "https://meteorologia-377e2-default-rtdb.europe-west1.firebasedatabase.app/historie.json?orderBy=%22timestamp%22&limitToLast=10080";
 
-        // Hilfsfunktion: Windrichtung aus Grad berechnen
-        function getWindDirection(deg) {
+        // Chart.js Einstellungen
+        Chart.defaults.color = '#8b95a5';
+        Chart.defaults.borderColor = '#212733';
+        let mainChart = null;
+
+        // Zustand
+        let rawHistoryData = [];
+        let currentMetric = 'temperature';
+        let currentTimeframe = '24h';
+
+        const metricConfigs = {
+            temperature: { label: 'Temperatur (°C)', color: '#ff9b26', bg: 'rgba(255, 155, 38, 0.1)' },
+            humidity: { label: 'Luftfeuchtigkeit (%)', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)' },
+            pressure: { label: 'Luftdruck (hPa)', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },
+            windDirectionDeg: { label: 'Windrichtung (°)', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)' },
+            uvIndex: { label: 'UV-Index', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
+            rainLast24h: { label: 'Niederschlag (mm)', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.1)' }
+        };
+
+        // ------------------ MATHEMATISCHE BERECHNUNGEN ------------------
+        
+        // Taupunkt über Magnus-Formel
+        function calculateDewPoint(temp, humidity) {
+            if (temp == null || humidity == null) return "--";
+            const a = 17.27;
+            const b = 237.7;
+            const alpha = ((a * temp) / (b + temp)) + Math.log(humidity / 100.0);
+            const dewPoint = (b * alpha) / (a - alpha);
+            return dewPoint.toFixed(1) + " °C";
+        }
+
+        // Drucktrend über die letzten 3 Stunden
+        function calculatePressureTrend(values) {
+            if (!values || values.length < 2) return "--";
+            const latest = values[values.length - 1];
+            
+            // Suche den Wert vor ca. 3 Stunden (180 min)
+            const targetTime = latest.timestamp - (3 * 60 * 60 * 1000);
+            const pastEntry = values.find(v => v.timestamp >= targetTime) || values[0];
+            
+            if (!pastEntry || pastEntry.pressure == null || latest.pressure == null) return "--";
+            
+            const diff = latest.pressure - pastEntry.pressure;
+            let arrow = "➔";
+            if (diff > 1.5) arrow = "⇈";
+            else if (diff > 0.5) arrow = "↗";
+            else if (diff < -1.5) arrow = "⇊";
+            else if (diff < -0.5) arrow = "↘";
+
+            return `${arrow} ${diff > 0 ? '+' : ''}${diff.toFixed(1)} hPa`;
+        }
+
+        function getWindDirectionText(deg) {
+            if (deg == null) return "--";
             const dirs = ["N", "NO", "O", "SO", "S", "SW", "W", "NW"];
             return dirs[Math.round(deg / 45) % 8];
         }
 
-        // 1. Live Daten laden & in die linke Spalte eintragen
+        // ------------------ LIVE DATEN LADEN ------------------
         async function loadLive() {
             try {
                 const res = await fetch(FIREBASE_LATEST);
                 const data = await res.json();
                 if (!data) return;
 
-                document.getElementById('temp-main').innerText = data.temperature.toFixed(2) + " °C";
-                document.getElementById('hum-val').innerText = data.humidity.toFixed(0) + " %";
-                document.getElementById('press-val').innerText = data.pressure.toFixed(0) + " hPa";
-                
-                document.getElementById('wind-dir-val').innerText = getWindDirection(data.windDirectionDeg || 0);
+                document.getElementById('temp-main').innerText = data.temperature ? data.temperature.toFixed(2) + " °C" : "-- °C";
+                document.getElementById('hum-val').innerText = data.humidity ? data.humidity.toFixed(0) + " %" : "-- %";
+                document.getElementById('press-val').innerText = data.pressure ? data.pressure.toFixed(0) + " hPa" : "-- hPa";
+                document.getElementById('wind-dir-val').innerText = getWindDirectionText(data.windDirectionDeg);
 
-                // Platzhalter für noch nicht implementierte Sensoren (ESP32 sendet -1)
-                document.getElementById('wind-speed-val').innerText = (data.windSpeed === -1 || data.windSpeed == null) ? "--" : data.windSpeed + " km/h";
-                document.getElementById('uv-val').innerText = (data.uvIndex === -1 || data.uvIndex == null) ? "--" : data.uvIndex;
-                document.getElementById('rain-val').innerText = (data.rainLast24h === -1 || data.rainLast24h == null) ? "--" : data.rainLast24h + " mm";
+                // Taupunkt aktualisieren
+                document.getElementById('dew-point').innerText = calculateDewPoint(data.temperature, data.humidity);
+
+                // Platzhalter-Verarbeitung (-1 = nicht verbunden)
+                handlePlaceholderSensor('wind-speed-val', 'wind-speed-tag', data.windSpeed, " km/h");
+                handlePlaceholderSensor('uv-val', 'uv-tag', data.uvIndex, "");
+                handlePlaceholderSensor('rain-val', 'rain-tag', data.rainLast24h, " mm");
 
                 const date = new Date(data.timestamp || Date.now());
                 document.getElementById('last-update').innerText = "Update: " + date.toLocaleTimeString("de-DE", {hour: '2-digit', minute:'2-digit'});
 
             } catch (e) {
-                console.error("Fehler beim Laden der Live-Daten:", e);
+                console.error("Fehler bei Live-Daten:", e);
             }
         }
 
-        // Chart.js Default Settings für Dark Mode
-        Chart.defaults.color = '#8b95a5';
-        Chart.defaults.borderColor = '#212733';
-        let tempChart, barChart;
+        function handlePlaceholderSensor(valId, tagId, value, unit) {
+            const valElem = document.getElementById(valId);
+            const tagElem = document.getElementById(tagId);
+            if (value === -1 || value == null) {
+                valElem.innerText = "--";
+                tagElem.style.display = "inline-block";
+            } else {
+                valElem.innerText = value + unit;
+                tagElem.style.display = "none";
+            }
+        }
 
-        // 2. Historie laden, aggregieren und Charts/Listen füllen
+        // ------------------ HISTORIE & DOWNSAMPLING ------------------
         async function loadHistory() {
             try {
                 const res = await fetch(FIREBASE_HISTORY);
                 const data = await res.json();
                 if (!data) return;
 
-                // Array sortieren nach Zeit
-                const values = Object.values(data).sort((a, b) => a.timestamp - b.timestamp);
-                if (values.length === 0) return;
-                
-                // ---- CHARTS (Letzte 24 Stunden = ca. 96 Messungen) ----
-                const last24h = values.slice(-1440); 
-                const labels24h = last24h.map(v => new Date(v.timestamp).toLocaleTimeString("de-DE", {hour: '2-digit', minute:'2-digit'}));
-                const temps24h = last24h.map(v => v.temperature);
-                const hums24h = last24h.map(v => v.humidity);
+                rawHistoryData = Object.values(data).sort((a, b) => a.timestamp - b.timestamp);
+                if (rawHistoryData.length === 0) return;
 
-                // Temperatur Line Chart
-                const ctxLine = document.getElementById('tempChart').getContext('2d');
-                if(tempChart) tempChart.destroy();
-                tempChart = new Chart(ctxLine, {
-                    type: 'line',
-                    data: {
-                        labels: labels24h,
-                        datasets: [{
-                            label: 'Temperatur (°C) - Letzte 24h',
-                            data: temps24h,
-                            borderColor: '#ff9b26',
-                            backgroundColor: 'rgba(255, 155, 38, 0.1)',
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.3,
-                            pointRadius: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        plugins: { legend: { display: true, position: 'top', align: 'end' } },
-                        scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 8 } }, y: { grid: { color: '#212733' } } }
-                    }
-                });
+                // Druck-Trend berechnen
+                document.getElementById('pressure-trend').innerText = calculatePressureTrend(rawHistoryData);
 
-                // Luftfeuchtigkeit Bar Chart
-                const ctxBar = document.getElementById('barChart').getContext('2d');
-                if(barChart) barChart.destroy();
-                barChart = new Chart(ctxBar, {
-                    type: 'bar',
-                    data: {
-                        labels: labels24h,
-                        datasets: [{
-                            label: 'Luftfeuchtigkeit (%) - Letzte 24h',
-                            data: hums24h,
-                            backgroundColor: '#3b82f6',
-                            borderRadius: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        plugins: { legend: { display: true, position: 'top', align: 'end' } },
-                        scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 8 } }, y: { grid: { color: '#212733' }, min: 0, max: 100 } }
-                    }
-                });
-
-                // ---- STATISTIK DER LETZTEN TAGE (Messwerte gruppieren) ----
-                const dailyData = {};
-                values.forEach(v => {
-                    const d = new Date(v.timestamp);
-                    // Erzeugt Format wie "Mo, 08.10."
-                    const dayKey = d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
-                    
-                    if (!dailyData[dayKey]) {
-                        dailyData[dayKey] = { temps: [], timestamp: v.timestamp };
-                    }
-                    if (v.temperature != null && !isNaN(v.temperature)) {
-                        dailyData[dayKey].temps.push(v.temperature);
-                    }
-                });
-
-                // In Array umwandeln und sortieren (ältester Tag zuerst)
-                const sortedDays = Object.keys(dailyData)
-                    .map(key => ({
-                        dateLabel: key,
-                        temps: dailyData[key].temps,
-                        timestamp: dailyData[key].timestamp
-                    }))
-                    .sort((a, b) => a.timestamp - b.timestamp);
-
-                // Letzte 6 Tage für das obere Grid filtern
-                const last6Days = sortedDays.slice(-6);
-                
-                const gridHtml = last6Days.map(day => {
-                    const avgTemp = (day.temps.reduce((a,b) => a+b, 0) / day.temps.length).toFixed(1);
-                    return `
-                        <div class="day-card">
-                            <div class="day-name">${day.dateLabel}</div>
-                            <div class="day-temp">Ø ${avgTemp}°</div>
-                        </div>
-                    `;
-                }).join('');
-                document.getElementById('days-history-grid').innerHTML = gridHtml;
-
-                // Letzte 4 Tage für die Min/Max Liste filtern (umgekehrte Reihenfolge für Anzeige)
-                const last4DaysReversed = [...sortedDays].reverse().slice(0, 4);
-                
-                const listHtml = last4DaysReversed.map(day => {
-                    const maxT = Math.max(...day.temps).toFixed(1);
-                    const minT = Math.min(...day.temps).toFixed(1);
-                    return `
-                        <div class="list-item">
-                            <span>${day.dateLabel}</span>
-                            <div class="min-max-bar">
-                                <span class="min-val">${minT}°</span>
-                                <span>—</span>
-                                <span class="max-val">${maxT}°</span>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-                document.getElementById('min-max-list').innerHTML = listHtml;
+                // Render Komponenten
+                renderDaysOverview();
+                renderMinMaxGrid();
+                updateChart();
 
             } catch (e) {
-                console.error("Fehler beim Laden der Verlaufs-Daten:", e);
+                console.error("Fehler bei Historie-Daten:", e);
             }
         }
 
-        // Initiale Aufrufe & Timer
+        // Hilfsfunktion: Filtert & Reduziert Datenpunkte je nach Zeitraum (Performance-Schutz!)
+        function getFilteredAndDownsampledData() {
+            if (!rawHistoryData.length) return { labels: [], values: [] };
+
+            const now = rawHistoryData[rawHistoryData.length - 1].timestamp;
+            let timeframeMs = 24 * 60 * 60 * 1000; // Default 24h
+            if (currentTimeframe === '1h') timeframeMs = 60 * 60 * 1000;
+            if (currentTimeframe === '7d') timeframeMs = 7 * 24 * 60 * 60 * 1000;
+
+            const startTime = now - timeframeMs;
+            const filtered = rawHistoryData.filter(d => d.timestamp >= startTime);
+
+            // 1) Wenn 1h oder 24h: direkt unkomprimierte / leicht gefilterte Daten nutzen
+            if (currentTimeframe !== '7d') {
+                return {
+                    labels: filtered.map(d => new Date(d.timestamp).toLocaleTimeString("de-DE", {hour: '2-digit', minute:'2-digit'})),
+                    values: filtered.map(d => (d[currentMetric] === -1 ? null : d[currentMetric]))
+                };
+            }
+
+            // 2) Wenn 7 Tage: Auf Stunden-Durchschnitte aggregieren (Downsampling)
+            const hourlyGroups = {};
+            filtered.forEach(d => {
+                const hourKey = new Date(d.timestamp).toLocaleString("de-DE", { day: '2-digit', month: '2-digit', hour: '2-digit' }) + ":00";
+                if (!hourlyGroups[hourKey]) hourlyGroups[hourKey] = [];
+                if (d[currentMetric] != null && d[currentMetric] !== -1) {
+                    hourlyGroups[hourKey].push(d[currentMetric]);
+                }
+            });
+
+            const labels = [];
+            const values = [];
+            Object.keys(hourlyGroups).forEach(key => {
+                labels.push(key);
+                const arr = hourlyGroups[key];
+                if (arr.length > 0) {
+                    const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
+                    values.push(avg);
+                } else {
+                    values.push(null);
+                }
+            });
+
+            return { labels, values };
+        }
+
+        // ------------------ CHART STEUERUNG ------------------
+        function updateChart() {
+            const { labels, values } = getFilteredAndDownsampledData();
+            const config = metricConfigs[currentMetric];
+
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            if (mainChart) mainChart.destroy();
+
+            mainChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: config.label,
+                        data: values,
+                        borderColor: config.color,
+                        backgroundColor: config.bg,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: currentTimeframe === '1h' ? 3 : 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true, position: 'top', align: 'end' } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } },
+                        y: { grid: { color: '#212733' } }
+                    }
+                }
+            });
+        }
+
+        function switchMetric(metric) {
+            currentMetric = metric;
+            document.querySelectorAll('.chart-tabs .tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            updateChart();
+        }
+
+        function switchTimeframe(tf) {
+            currentTimeframe = tf;
+            document.querySelectorAll('.timeframe-tabs .tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            updateChart();
+        }
+
+        // ------------------ TAGES-STATISTIKEN ------------------
+        function groupDataByDay() {
+            const daily = {};
+            rawHistoryData.forEach(v => {
+                const d = new Date(v.timestamp);
+                const dayKey = d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
+                if (!daily[dayKey]) daily[dayKey] = { temps: [], timestamp: v.timestamp };
+                if (v.temperature != null) daily[dayKey].temps.push(v.temperature);
+            });
+            return Object.keys(daily).map(k => ({
+                dateLabel: k,
+                temps: daily[k].temps,
+                timestamp: daily[k].timestamp
+            })).sort((a,b) => a.timestamp - b.timestamp);
+        }
+
+        function renderDaysOverview() {
+            const days = groupDataByDay().slice(-6);
+            const html = days.map(d => {
+                const avg = d.temps.length ? (d.temps.reduce((a,b)=>a+b, 0) / d.temps.length).toFixed(1) : "--";
+                return `
+                    <div class="day-card">
+                        <div class="day-name">${d.dateLabel}</div>
+                        <div class="day-temp">Ø ${avg}°</div>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('days-history-grid').innerHTML = html;
+        }
+
+        function renderMinMaxGrid() {
+            const days = groupDataByDay().reverse().slice(0, 4);
+            const html = days.map(d => {
+                const max = d.temps.length ? Math.max(...d.temps).toFixed(1) : "--";
+                const min = d.temps.length ? Math.min(...d.temps).toFixed(1) : "--";
+                return `
+                    <div class="min-max-card">
+                        <div class="date">${d.dateLabel}</div>
+                        <div class="min-max-values">
+                            <span class="min-val">${min} °C</span>
+                            <span class="max-val">${max} °C</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('min-max-grid').innerHTML = html;
+        }
+
+        // Initialisierung & Intervall
         loadLive();
         loadHistory();
         setInterval(loadLive, 60000);       // Live-Daten jede Minute
