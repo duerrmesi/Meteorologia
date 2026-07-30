@@ -58,17 +58,13 @@
             gap: 25px;
         }
 
-        /* Neumorphism Cards */
         .neu-card {
             background: var(--card-bg);
             border-radius: 20px;
-            box-shadow: 
-                8px 8px 16px var(--card-shadow-dark), 
-                -8px -8px 16px var(--card-shadow-light);
+            box-shadow: 8px 8px 16px var(--card-shadow-dark), -8px -8px 16px var(--card-shadow-light);
             padding: 20px;
         }
 
-        /* Linke Spalte */
         .left-column {
             display: flex;
             flex-direction: column;
@@ -79,10 +75,7 @@
             background: var(--accent-orange);
             border-radius: 25px;
             padding: 25px;
-            box-shadow: 
-                10px 10px 20px rgba(0,0,0,0.4), 
-                -5px -5px 15px rgba(255, 155, 38, 0.2),
-                inset 2px 2px 5px rgba(255,255,255,0.3);
+            box-shadow: 10px 10px 20px rgba(0,0,0,0.4), -5px -5px 15px rgba(255, 155, 38, 0.2), inset 2px 2px 5px rgba(255,255,255,0.3);
             color: white;
             position: relative;
         }
@@ -98,7 +91,25 @@
             font-size: 60px;
             font-weight: 700;
             line-height: 1;
-            margin: 20px 0 15px;
+            margin: 15px 0 10px;
+        }
+
+        .warning-badges {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 500;
+            display: none;
+            align-items: center;
+            gap: 5px;
         }
 
         .calculated-pills {
@@ -123,7 +134,6 @@
             opacity: 0.8;
         }
 
-        /* Metrics Grid */
         .metrics-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -166,14 +176,43 @@
             margin-top: 4px;
         }
 
-        /* Rechte Spalte */
+        /* Wind Kompass Design */
+        .wind-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .compass-circle {
+            width: 45px;
+            height: 45px;
+            border: 2px dashed var(--text-muted);
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 5px;
+        }
+
+        .compass-needle {
+            width: 4px;
+            height: 25px;
+            background: var(--accent-purple);
+            position: absolute;
+            top: 8px;
+            border-radius: 2px;
+            transform-origin: bottom center;
+            transition: transform 0.5s ease;
+        }
+
         .right-column {
             display: flex;
             flex-direction: column;
             gap: 25px;
         }
 
-        /* Tage Übersicht */
         .days-grid {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
@@ -205,7 +244,6 @@
             color: #ff9b26;
         }
 
-        /* Multi-Chart Container */
         .chart-section {
             display: flex;
             flex-direction: column;
@@ -227,6 +265,7 @@
             border-radius: 12px;
             gap: 4px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .tab-btn {
@@ -252,34 +291,28 @@
             color: white;
         }
 
+        .export-btn {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
         .date-picker {
             background: rgba(255,255,255,0.05);
             border: 1px solid rgba(255,255,255,0.1);
-            color: var(--text-muted);
             padding: 5px 10px;
             border-radius: 8px;
             font-size: 12px;
             color-scheme: dark;
             outline: none;
             cursor: pointer;
-        }
-
-        .date-picker:focus, .date-picker.active {
-            color: var(--text-main);
-            border-color: #ff9b26;
+            color: var(--text-muted);
         }
 
         .chart-canvas-container {
             height: 300px;
             width: 100%;
             position: relative;
-        }
-
-        /* Bottom Row */
-        .bottom-row {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 25px;
         }
 
         .history-list-title {
@@ -324,8 +357,6 @@
             .dashboard-grid { grid-template-columns: 1fr; }
             .days-grid { grid-template-columns: repeat(3, 1fr); }
             .history-grid-container { grid-template-columns: repeat(2, 1fr); }
-            .chart-controls { flex-direction: column; align-items: stretch; }
-            .timeframe-tabs { flex-wrap: wrap; }
         }
     </style>
 </head>
@@ -336,7 +367,6 @@
         
         <div class="dashboard-grid">
             
-            <!-- Linke Spalte -->
             <div class="left-column">
                 
                 <div class="orange-card">
@@ -344,6 +374,13 @@
                         <div><i class="fas fa-satellite-dish"></i> Wetterstation</div>
                         <div id="last-update">Update: --:--</div>
                     </div>
+                    
+                    <!-- Live Warnungen -->
+                    <div class="warning-badges" id="warning-badges">
+                        <div class="badge" id="badge-frost"><i class="fas fa-snowflake"></i> Frost-Warnung</div>
+                        <div class="badge" id="badge-storm"><i class="fas fa-wind"></i> Rascher Druckfall</div>
+                    </div>
+
                     <div class="temp-large" id="temp-main">-- °C</div>
                     
                     <div class="calculated-pills">
@@ -369,11 +406,18 @@
                         <div class="metric-title">Luftdruck</div>
                         <div class="metric-value" id="press-val">-- hPa</div>
                     </div>
+                    
+                    <!-- Animierter Wind Kompass Card -->
                     <div class="neu-card metric-card">
-                        <i class="far fa-compass"></i>
-                        <div class="metric-title">Windrichtung</div>
-                        <div class="metric-value" id="wind-dir-val">--</div>
+                        <div class="wind-display">
+                            <div class="compass-circle">
+                                <div class="compass-needle" id="compass-needle"></div>
+                            </div>
+                            <div class="metric-title">Windrichtung</div>
+                            <div class="metric-value" id="wind-dir-val">--</div>
+                        </div>
                     </div>
+
                     <div class="neu-card metric-card">
                         <i class="fas fa-wind"></i>
                         <div class="metric-title">Windgeschw.</div>
@@ -387,25 +431,22 @@
                         <div class="offline-tag" id="uv-tag" style="display:none;">Offline</div>
                     </div>
                     <div class="neu-card metric-card">
-                        <i class="fas fa-cloud-rain"></i>
-                        <div class="metric-title">Niederschlag</div>
-                        <div class="metric-value" id="rain-val">--</div>
-                        <div class="offline-tag" id="rain-tag" style="display:none;">Offline</div>
+                        <i class="fas fa-battery-three-quarters" style="color: var(--accent-green)"></i>
+                        <div class="metric-title">Powerbank / Akku</div>
+                        <div class="metric-value" id="batt-val">-- V</div>
+                        <div style="font-size: 9px; color: var(--text-muted);" id="wifi-rssi">RSSI: -- dBm</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Rechte Spalte -->
             <div class="right-column">
                 
                 <div class="days-grid" id="days-history-grid">
                     <div class="day-card"><div class="day-name">Lade...</div></div>
                 </div>
 
-                <!-- Interaktiver Multi-Chart Bereich -->
                 <div class="neu-card chart-section">
                     <div class="chart-controls">
-                        <!-- Sensor Tabs -->
                         <div class="chart-tabs">
                             <button class="tab-btn active" onclick="switchMetric('temperature')">Temp</button>
                             <button class="tab-btn" onclick="switchMetric('humidity')">Feuchte</button>
@@ -414,13 +455,14 @@
                             <button class="tab-btn" onclick="switchMetric('uvIndex')">UV</button>
                             <button class="tab-btn" onclick="switchMetric('rainLast24h')">Regen</button>
                         </div>
-                        <!-- Timeframe Switcher & Datepicker -->
+                        
                         <div class="timeframe-tabs">
                             <button class="tab-btn timeframe-btn" onclick="switchTimeframe('1h', this)">1 Std</button>
                             <button class="tab-btn timeframe-btn active" onclick="switchTimeframe('24h', this)">24 Std</button>
                             <button class="tab-btn timeframe-btn" onclick="switchTimeframe('7d', this)">7 Tage</button>
                             <button class="tab-btn timeframe-btn" onclick="switchTimeframe('all', this)">Allzeit</button>
                             <input type="date" id="date-picker" class="date-picker" onchange="switchTimeframe('date', this)">
+                            <button class="tab-btn export-btn" onclick="exportCSV()"><i class="fas fa-download"></i> CSV</button>
                         </div>
                     </div>
 
@@ -444,7 +486,6 @@
     </div>
 
     <script>
-        // ------------------ CONFIG & CONSTANTS ------------------
         const FIREBASE_BASE = "https://meteorologia-377e2-default-rtdb.europe-west1.firebasedatabase.app";
         const FIREBASE_LATEST = `${FIREBASE_BASE}/messwerte.json`;
         const FIREBASE_7DAYS = `${FIREBASE_BASE}/historie.json?orderBy=%22timestamp%22&limitToLast=10080`;
@@ -453,9 +494,8 @@
         Chart.defaults.borderColor = '#212733';
         let mainChart = null;
 
-        // Zustände
-        let rawHistoryData = [];      // Standard 7-Tage Daten für Dashboard-Karten
-        let currentChartData = [];    // Daten, die gerade im Diagramm angezeigt werden
+        let rawHistoryData = [];
+        let currentChartData = [];
         let currentMetric = 'temperature';
         let currentTimeframe = '24h';
 
@@ -468,7 +508,6 @@
             rainLast24h: { label: 'Niederschlag (mm)', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.1)' }
         };
 
-        // ------------------ MATHEMATISCHE BERECHNUNGEN ------------------
         function calculateDewPoint(temp, humidity) {
             if (temp == null || humidity == null) return "--";
             const a = 17.27, b = 237.7;
@@ -484,19 +523,25 @@
             
             if (!pastEntry || pastEntry.pressure == null || latest.pressure == null) return "--";
             const diff = latest.pressure - pastEntry.pressure;
+            
+            // Druckwarnung-Logik (wenn Druck innerhalb 3h um mehr als 2 hPa fällt)
+            const badgeStorm = document.getElementById('badge-storm');
+            if (diff <= -2.0) {
+                badgeStorm.style.display = "inline-flex";
+            } else {
+                badgeStorm.style.display = "none";
+            }
+
             let arrow = diff > 1.5 ? "⇈" : diff > 0.5 ? "↗" : diff < -1.5 ? "⇊" : diff < -0.5 ? "↘" : "➔";
             return `${arrow} ${diff > 0 ? '+' : ''}${diff.toFixed(1)} hPa`;
         }
 
-        // Neue Himmelsrichtungen-Logik
         function getWindDirectionText(deg) {
             if (deg == null) return "--";
             const dirs = ["N", "NO", "O", "SO", "S", "SW", "W", "NW", "N"];
-            // Umrechnung in 8 Sektoren (45° Schritte)
             return dirs[Math.round((deg % 360) / 45)];
         }
 
-        // ------------------ LIVE DATEN LADEN ------------------
         async function loadLive() {
             try {
                 const res = await fetch(FIREBASE_LATEST);
@@ -506,12 +551,28 @@
                 document.getElementById('temp-main').innerText = data.temperature ? data.temperature.toFixed(2) + " °C" : "-- °C";
                 document.getElementById('hum-val').innerText = data.humidity ? data.humidity.toFixed(0) + " %" : "-- %";
                 document.getElementById('press-val').innerText = data.pressure ? data.pressure.toFixed(0) + " hPa" : "-- hPa";
-                document.getElementById('wind-dir-val').innerText = getWindDirectionText(data.windDirectionDeg);
+                
+                // Windrichtung Text & Kompass Nadel Rotation
+                const windDeg = data.windDirectionDeg || 0;
+                document.getElementById('wind-dir-val').innerText = getWindDirectionText(windDeg);
+                document.getElementById('compass-needle').style.transform = `rotate(${windDeg}deg)`;
+
                 document.getElementById('dew-point').innerText = calculateDewPoint(data.temperature, data.humidity);
+
+                // Frost Warnung Logik
+                const badgeFrost = document.getElementById('badge-frost');
+                if (data.temperature <= 3) {
+                    badgeFrost.style.display = "inline-flex";
+                } else {
+                    badgeFrost.style.display = "none";
+                }
+
+                // Health Monitor Werte (Powerbank / RSSI)
+                document.getElementById('batt-val').innerText = data.batteryVoltage ? data.batteryVoltage.toFixed(2) + " V" : "5.00 V";
+                document.getElementById('wifi-rssi').innerText = data.rssi ? `RSSI: ${data.rssi} dBm` : "WLAN: Aktiv";
 
                 handlePlaceholderSensor('wind-speed-val', 'wind-speed-tag', data.windSpeed, " km/h");
                 handlePlaceholderSensor('uv-val', 'uv-tag', data.uvIndex, "");
-                handlePlaceholderSensor('rain-val', 'rain-tag', data.rainLast24h, " mm");
 
                 const date = new Date(data.timestamp || Date.now());
                 document.getElementById('last-update').innerText = "Update: " + date.toLocaleTimeString("de-DE", {hour: '2-digit', minute:'2-digit'});
@@ -530,10 +591,8 @@
             }
         }
 
-        // ------------------ HISTORIE & DIAGRAMM STEUERUNG ------------------
         async function initDashboard() {
             try {
-                // Lade zuerst die Standard 7-Tage für das UI
                 const res = await fetch(FIREBASE_7DAYS);
                 const data = await res.json();
                 if (data) {
@@ -548,25 +607,15 @@
             } catch (e) { console.error("Fehler Init Dashboard:", e); }
         }
 
-        // Zeiträume und Datums-Suche laden
         async function switchTimeframe(tf, btnElement) {
             currentTimeframe = tf;
-            
-            // Buttons visuell updaten
             document.querySelectorAll('.timeframe-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('date-picker').classList.remove('active');
             
             if (tf === 'date') {
-                btnElement.classList.add('active');
+                if(btnElement) btnElement.classList.add('active');
             } else {
                 if(btnElement) btnElement.classList.add('active');
-                document.getElementById('date-picker').value = ""; // Reset Kalender
-            }
-
-            // Ladeanimation ins Diagramm schreiben
-            if (mainChart) {
-                mainChart.data.datasets[0].data = [];
-                mainChart.update();
+                document.getElementById('date-picker').value = "";
             }
 
             if (tf === '1h' || tf === '24h' || tf === '7d') {
@@ -574,7 +623,6 @@
                 updateChart();
             } 
             else if (tf === 'all') {
-                // Hole ALLES aus der Datenbank (Vorsicht bei extrem großen Datenbanken, downsampling passiert unten)
                 try {
                     const res = await fetch(`${FIREBASE_BASE}/historie.json?orderBy=%22timestamp%22`);
                     const data = await res.json();
@@ -583,21 +631,17 @@
                 } catch(e) { console.error("Fehler Allzeit:", e); }
             } 
             else if (tf === 'date') {
-                // Hole gezielt nur den gewählten Tag
                 const selectedDate = document.getElementById('date-picker').value;
                 if (!selectedDate) return;
-                
-                const start = new Date(selectedDate);
-                start.setHours(0,0,0,0);
-                const end = new Date(selectedDate);
-                end.setHours(23,59,59,999);
+                const start = new Date(selectedDate); start.setHours(0,0,0,0);
+                const end = new Date(selectedDate); end.setHours(23,59,59,999);
 
                 try {
                     const res = await fetch(`${FIREBASE_BASE}/historie.json?orderBy=%22timestamp%22&startAt=${start.getTime()}&endAt=${end.getTime()}`);
                     const data = await res.json();
                     currentChartData = data ? Object.values(data).sort((a, b) => a.timestamp - b.timestamp) : [];
                     updateChart();
-                } catch(e) { console.error("Fehler bei Datumssuche:", e); }
+                } catch(e) { console.error("Fehler Datumssuche:", e); }
             }
         }
 
@@ -608,7 +652,24 @@
             updateChart();
         }
 
-        // Intelligentes Downsampling für Diagramme
+        // CSV Export Funktion
+        function exportCSV() {
+            if (!currentChartData || !currentChartData.length) {
+                alert("Keine Daten zum Exportieren vorhanden.");
+                return;
+            }
+            let csv = "Timestamp,Datum,Temperatur_C,Luftfeuchtigkeit_prozent,Luftdruck_hPa,Windrichtung_Grad,UV_Index,Regen_mm\n";
+            currentChartData.forEach(d => {
+                const dateStr = new Date(d.timestamp).toLocaleString("de-DE");
+                csv += `${d.timestamp},"${dateStr}",${d.temperature ?? ''},${d.humidity ?? ''},${d.pressure ?? ''},${d.windDirectionDeg ?? ''},${d.uvIndex ?? ''},${d.rainLast24h ?? ''}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `wetter_daten_${currentTimeframe}_${Date.now()}.csv`;
+            link.click();
+        }
+
         function processChartData() {
             if (!currentChartData || !currentChartData.length) return { labels: [], values: [] };
             let filtered = currentChartData;
@@ -621,21 +682,16 @@
             filtered.forEach(d => {
                 const date = new Date(d.timestamp);
                 let key;
-
                 if (currentTimeframe === '1h') {
-                    // Minutengenau
                     key = date.toLocaleTimeString("de-DE", {hour: '2-digit', minute:'2-digit'});
                 } else if (currentTimeframe === '24h' || currentTimeframe === 'date') {
-                    // 10-Minuten Durchschnitte (Schont den Browser und macht den Tooltip angenehmer)
                     const m = Math.floor(date.getMinutes() / 10) * 10;
                     date.setMinutes(m, 0, 0);
                     key = date.toLocaleTimeString("de-DE", {hour: '2-digit', minute:'2-digit'});
                 } else if (currentTimeframe === '7d') {
-                    // Stundendurchschnitte
                     date.setMinutes(0, 0, 0);
                     key = date.toLocaleString("de-DE", { day: '2-digit', month: '2-digit', hour: '2-digit' }) + "h";
                 } else if (currentTimeframe === 'all') {
-                    // Tagesdurchschnitte
                     key = date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
                 }
 
@@ -647,26 +703,22 @@
 
             const labels = [];
             const values = [];
-
             Object.keys(groups).forEach(key => {
                 labels.push(key);
                 const arr = groups[key];
                 if (arr.length > 0) {
                     if (currentMetric === 'windDirectionDeg') {
-                        // Bei Gradzahlen nehmen wir den mittleren gemessenen Wert der Zeitspanne
                         values.push(arr[Math.floor(arr.length / 2)]);
                     } else {
-                        values.push(arr.reduce((a, b) => a + b, 0) / arr.length); // Normaler Durchschnitt
+                        values.push(arr.reduce((a, b) => a + b, 0) / arr.length);
                     }
                 } else {
                     values.push(null);
                 }
             });
-
             return { labels, values };
         }
 
-        // ------------------ CHART RENDERING ------------------
         function updateChart() {
             const { labels, values } = processChartData();
             const config = metricConfigs[currentMetric];
@@ -674,7 +726,6 @@
 
             if (mainChart) mainChart.destroy();
 
-            // Achsen-Einstellungen speziell für Windrichtung
             let yAxisConfig = { grid: { color: '#212733' } };
             if (currentMetric === 'windDirectionDeg') {
                 yAxisConfig = {
@@ -707,18 +758,13 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    // MAGNET-EFFEKT: Aktiviert den Hover über die gesamte vertikale Linie
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                    },
+                    interaction: { mode: 'index', intersect: false },
                     plugins: { 
                         legend: { display: true, position: 'top', align: 'end' },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
                                     let val = context.parsed.y;
-                                    // Custom Tooltip für Himmelsrichtungen
                                     if (currentMetric === 'windDirectionDeg') {
                                         return `${config.label}: ${getWindDirectionText(val)} (${val}°)`;
                                     }
@@ -735,7 +781,6 @@
             });
         }
 
-        // ------------------ TAGES-STATISTIKEN (KARTEN) ------------------
         function renderDaysOverview() {
             const daily = {};
             rawHistoryData.forEach(v => {
@@ -766,7 +811,6 @@
             ).join('');
         }
 
-        // Start
         loadLive();
         initDashboard();
         setInterval(loadLive, 60000); 
