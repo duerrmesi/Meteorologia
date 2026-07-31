@@ -707,14 +707,19 @@
             labels.push(key);
             
             // Haben wir für diesen Zeitpunkt Daten?
-            if (groups[key] && groups[key].length > 0) {
-                const arr = groups[key];
-                if (currentMetric === 'windDirectionDeg') {
-                    values.push(arr[Math.floor(arr.length / 2)]);
-                } else {
-                    values.push(arr.reduce((a, b) => a + b, 0) / arr.length);
-                }
-            } else {
+           // Haben wir für diesen Zeitpunkt Daten?
+if (groups[key] && groups[key].length > 0) {
+    const arr = groups[key];
+    if (currentMetric === 'windDirectionDeg') {
+        values.push(arr[Math.floor(arr.length / 2)]);
+    } else if (currentMetric === 'uvIndex') {
+        // Nimm den Höchstwert (Spitzenwert) im Intervall, 
+        // damit kurzzeitige Einbrüche oder Doppel-Sends den UV-Index nicht halbieren!
+        values.push(Math.max(...arr));
+    } else {
+        values.push(arr.reduce((a, b) => a + b, 0) / arr.length);
+    }
+} else {
                 // KEINE DATEN -> null pushen. Das erzeugt die gewollte Lücke/den Abstand!
                 values.push(null);
             }
