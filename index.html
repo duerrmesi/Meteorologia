@@ -227,7 +227,7 @@
             gap: 10px;
         }
 
-        .chart-tabs, .timeframe-tabs {
+        .chart-tabs, .timeframe-tabs, .shift-tabs {
             display: flex;
             background: var(--bg-color);
             padding: 4px;
@@ -247,6 +247,10 @@
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
         }
 
         .tab-btn.active {
@@ -279,7 +283,7 @@
         }
 
         .chart-canvas-container {
-            height: 300px;
+            height: 340px;
             width: 100%;
             position: relative;
         }
@@ -321,6 +325,22 @@
 
         .min-val { color: var(--accent-blue); }
         .max-val { color: #ff9b26; }
+
+        .shift-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.02);
+            padding: 6px 12px;
+            border-radius: 12px;
+            margin-top: 5px;
+        }
+
+        .shift-status {
+            font-size: 11px;
+            color: #ff9b26;
+            font-weight: 500;
+        }
 
         @media (max-width: 1024px) {
             .dashboard-grid { grid-template-columns: 1fr; }
@@ -375,7 +395,6 @@
                         <div class="metric-value" id="press-val">-- hPa</div>
                     </div>
                     
-                    <!-- Klassische Windrichtungs-Karte mit Kompass Icon -->
                     <div class="neu-card metric-card">
                         <i class="far fa-compass"></i>
                         <div class="metric-title">Windrichtung</div>
@@ -415,7 +434,7 @@
                             <button class="tab-btn active" onclick="switchMetric('temperature')">Temp</button>
                             <button class="tab-btn" onclick="switchMetric('humidity')">Feuchte</button>
                             <button class="tab-btn" onclick="switchMetric('pressure')">Druck</button>
-                            <button class="tab-btn" onclick="switchMetric('windDirectionDeg')">Wind</button>
+                            <button class="tab-btn" onclick="switchMetric('windDirectionDeg')">Windrose</button>
                             <button class="tab-btn" onclick="switchMetric('uvIndex')">UV</button>
                             <button class="tab-btn" onclick="switchMetric('rainLast24h')">Regen</button>
                         </div>
@@ -428,6 +447,18 @@
                             <input type="date" id="date-picker" class="date-picker" onchange="switchTimeframe('date', this)">
                             <button class="tab-btn export-btn" onclick="exportCSV()"><i class="fas fa-download"></i> CSV</button>
                         </div>
+                    </div>
+
+                    <!-- Zeitfenster Verschieben / Zoom Steuerung -->
+                    <div class="shift-container">
+                        <div class="shift-tabs">
+                            <span style="font-size: 11px; color: var(--text-muted); margin-right: 5px;">Zeitbereich zoomen / verschieben:</span>
+                            <button class="tab-btn" onclick="shiftTime(1)"><i class="fas fa-chevron-left"></i> -1h früher</button>
+                            <button class="tab-btn" onclick="shiftTime(-1)">+1h später <i class="fas fa-chevron-right"></i></button>
+                            <button class="tab-btn" onclick="shiftTime(24)"><i class="fas fa-angle-double-left"></i> -24h</button>
+                            <button class="tab-btn" onclick="resetTimeShift()"><i class="fas fa-undo"></i> Aktuell</button>
+                        </div>
+                        <div class="shift-status" id="shift-status-tag">Aktueller Zeitbereich</div>
                     </div>
 
                     <div class="chart-canvas-container">
@@ -462,14 +493,86 @@
         let currentChartData = [];
         let currentMetric = 'temperature';
         let currentTimeframe = '24h';
+        let timeShiftMs = 0; // Zeit-Offset in Millisekunden zum Verschieben/Zoomen
 
         const metricConfigs = {
             temperature: { label: 'Temperatur (°C)', color: '#ff9b26', bg: 'rgba(255, 155, 38, 0.1)' },
             humidity: { label: 'Luftfeuchtigkeit (%)', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)' },
             pressure: { label: 'Luftdruck (hPa)', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },
-            windDirectionDeg: { label: 'Windrichtung', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)' },
+            windDirectionDeg: { label: 'Windrose (Zentrum: Alt → Rand: Neu)', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.2)' },
             uvIndex: { label: 'UV-Index', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
             rainLast24h: { label: 'Niederschlag (mm)', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.1)' }
+        };
+
+        // Custom Chart.js Plugin zum Zeichnen des Windrosen-Hintergrunds (Kompass-Ringe & Richtungen)
+        const windRosePlugin = {
+            id: 'windRoseBg',
+            beforeDraw(chart) {
+                if (currentMetric !== 'windDirectionDeg') return;
+                const { ctx } = chart;
+                const xAxis = chart.scales.x;
+                const yAxis = chart.scales.y;
+                
+                if (!xAxis || !yAxis) return;
+                
+                const centerX = xAxis.getPixelForValue(0);
+                const centerY = yAxis.getPixelForValue(0);
+                const edgeX = xAxis.getPixelForValue(100);
+                const maxRadius = Math.abs(edgeX - centerX);
+
+                ctx.save();
+                ctx.strokeStyle = '#212733';
+                ctx.fillStyle = '#8b95a5';
+                ctx.lineWidth = 1;
+                ctx.font = '11px Poppins, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                // Konzentrische Zeit-Ringe zeichnen (25%, 50%, 75%, 100%)
+                const rings = [0.25, 0.5, 0.75, 1.0];
+                rings.forEach(ratio => {
+                    const r = maxRadius * ratio;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, r, 0, 2 * Math.PI);
+                    ctx.stroke();
+                });
+
+                // Kompass-Achsen & Beschriftungen
+                const directions = [
+                    { label: 'N', deg: 0 },
+                    { label: 'NO', deg: 45 },
+                    { label: 'O', deg: 90 },
+                    { label: 'SO', deg: 135 },
+                    { label: 'S', deg: 180 },
+                    { label: 'SW', deg: 225 },
+                    { label: 'W', deg: 270 },
+                    { label: 'NW', deg: 315 }
+                ];
+
+                directions.forEach(d => {
+                    const rad = d.deg * Math.PI / 180;
+                    const xEnd = centerX + maxRadius * Math.sin(rad);
+                    const yEnd = centerY - maxRadius * Math.cos(rad);
+
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY);
+                    ctx.lineTo(xEnd, yEnd);
+                    ctx.stroke();
+
+                    const offset = 18;
+                    const xText = centerX + (maxRadius + offset) * Math.sin(rad);
+                    const yText = centerY - (maxRadius + offset) * Math.cos(rad);
+                    ctx.fillStyle = (d.deg % 90 === 0) ? '#ff9b26' : '#8b95a5';
+                    ctx.fillText(d.label, xText, yText);
+                });
+
+                // Hilfsinfos in der Mitte
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+                ctx.font = '10px Poppins, sans-serif';
+                ctx.fillText('• Älteste (Mitte)', centerX, centerY + 14);
+
+                ctx.restore();
+            }
         };
 
         function calculateDewPoint(temp, humidity) {
@@ -564,6 +667,9 @@
 
         async function switchTimeframe(tf, btnElement) {
             currentTimeframe = tf;
+            timeShiftMs = 0; // Reset offset bei Zeitrahmen-Wechsel
+            updateTimeShiftDisplay();
+
             document.querySelectorAll('.timeframe-btn').forEach(b => b.classList.remove('active'));
             
             if (tf === 'date') {
@@ -600,6 +706,30 @@
             }
         }
 
+        function shiftTime(hours) {
+            timeShiftMs += hours * 3600000;
+            if (timeShiftMs < 0) timeShiftMs = 0;
+            updateTimeShiftDisplay();
+            updateChart();
+        }
+
+        function resetTimeShift() {
+            timeShiftMs = 0;
+            updateTimeShiftDisplay();
+            updateChart();
+        }
+
+        function updateTimeShiftDisplay() {
+            const tag = document.getElementById('shift-status-tag');
+            if (!tag) return;
+            if (timeShiftMs === 0) {
+                tag.innerText = "Aktueller Zeitbereich";
+            } else {
+                const hoursPast = (timeShiftMs / 3600000).toFixed(1);
+                tag.innerText = `[-${hoursPast}h in die Vergangenheit verschoben]`;
+            }
+        }
+
         function switchMetric(metric) {
             currentMetric = metric;
             document.querySelectorAll('.chart-tabs .tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -624,204 +754,262 @@
             link.click();
         }
 
-        function processChartData() {
-    if (!currentChartData || !currentChartData.length) return { labels: [], values: [] };
-    
-    const now = Date.now();
-    let startTime, endTime = now;
-    let stepMins = 15; // Standard-Raster: 15 Minuten
-    let filtered = currentChartData;
-
-    // 1. Start- und Endzeitpunkt sowie das Intervall bestimmen
-    if (currentTimeframe === '1h') {
-        startTime = now - 3600000;
-        filtered = currentChartData.filter(d => d.timestamp >= startTime);
-    } else if (currentTimeframe === '24h') {
-        startTime = now - 86400000;
-        filtered = currentChartData.filter(d => d.timestamp >= startTime);
-    } else if (currentTimeframe === '7d') {
-        startTime = now - (7 * 86400000);
-        stepMins = 60; // Im 7-Tage-View auf 1 Stunde gruppieren
-        filtered = currentChartData.filter(d => d.timestamp >= startTime);
-    } else if (currentTimeframe === 'date') {
-        const selectedDate = document.getElementById('date-picker').value;
-        const startD = new Date(selectedDate); startD.setHours(0,0,0,0);
-        const endD = new Date(selectedDate); endD.setHours(23,59,59,999);
-        startTime = startD.getTime();
-        endTime = endD.getTime();
-    } else if (currentTimeframe === 'all') {
-        startTime = currentChartData[0].timestamp;
-        stepMins = 24 * 60; // Im Allzeit-View 1 Tag pro Schritt
-    }
-
-    // 2. Vorhandene Daten in ein "Dictionary" sortieren
-    const groups = {};
-    filtered.forEach(d => {
-        const date = new Date(d.timestamp);
-        let key;
-        if (currentTimeframe === '1h' || currentTimeframe === '24h' || currentTimeframe === 'date') {
-            const m = Math.floor(date.getMinutes() / 15) * 15; // 15-Minuten-Raster
-            date.setMinutes(m, 0, 0);
-            key = date.toLocaleTimeString("de-DE", {hour: '2-digit', minute:'2-digit'});
-        } else if (currentTimeframe === '7d') {
-            date.setMinutes(0, 0, 0);
-            key = date.toLocaleString("de-DE", { day: '2-digit', month: '2-digit', hour: '2-digit' }) + "h";
-        } else if (currentTimeframe === 'all') {
-            key = date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
-        }
-
-        if (!groups[key]) groups[key] = [];
-        if (d[currentMetric] != null && d[currentMetric] !== -1) {
-            groups[key].push(d[currentMetric]);
-        }
-    });
-
-    // 3. X-Achse MATHEMATISCH LÜCKENLOS aufbauen
-    const labels = [];
-    const values = [];
-    let iterDate = new Date(startTime);
-    
-    // iterDate (Startzeitpunkt) auf das gewählte Raster abrunden, damit es synchron ist
-    if (currentTimeframe === '1h' || currentTimeframe === '24h' || currentTimeframe === 'date') {
-        const m = Math.floor(iterDate.getMinutes() / 15) * 15;
-        iterDate.setMinutes(m, 0, 0);
-    } else if (currentTimeframe === '7d') {
-        iterDate.setMinutes(0, 0, 0);
-    } else if (currentTimeframe === 'all') {
-        iterDate.setHours(0, 0, 0, 0);
-    }
-
-    // Gehe in festen Schritten von Start bis Ende durch die Zeit
-    while (iterDate.getTime() <= endTime) {
-        let key;
-        if (currentTimeframe === '1h' || currentTimeframe === '24h' || currentTimeframe === 'date') {
-            key = iterDate.toLocaleTimeString("de-DE", {hour: '2-digit', minute:'2-digit'});
-        } else if (currentTimeframe === '7d') {
-            key = iterDate.toLocaleString("de-DE", { day: '2-digit', month: '2-digit', hour: '2-digit' }) + "h";
-        } else if (currentTimeframe === 'all') {
-            key = iterDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
-        }
-        
-        // Verhindert doppelte Keys (z.B. bei Zeitumstellungen)
-        if (labels.length === 0 || labels[labels.length - 1] !== key) {
-            labels.push(key);
+        // Berechnet die Polarkoordinaten für die Windrose (Zentrum = Alt, Rand = Neu)
+        function processWindRoseData() {
+            const now = Date.now() - timeShiftMs;
+            let timeframeMs = 86400000; // Standard 24h
             
-            // Haben wir für diesen Zeitpunkt Daten?
-           // Haben wir für diesen Zeitpunkt Daten?
-if (groups[key] && groups[key].length > 0) {
-    const arr = groups[key];
-    if (currentMetric === 'windDirectionDeg') {
-        values.push(arr[Math.floor(arr.length / 2)]);
-    } else if (currentMetric === 'uvIndex') {
-        // Nimm den Höchstwert (Spitzenwert) im Intervall, 
-        // damit kurzzeitige Einbrüche oder Doppel-Sends den UV-Index nicht halbieren!
-        values.push(Math.max(...arr));
-    } else {
-        values.push(arr.reduce((a, b) => a + b, 0) / arr.length);
-    }
-} else {
-                // KEINE DATEN -> null pushen. Das erzeugt die gewollte Lücke/den Abstand!
-                values.push(null);
+            if (currentTimeframe === '1h') timeframeMs = 3600000;
+            else if (currentTimeframe === '24h') timeframeMs = 86400000;
+            else if (currentTimeframe === '7d') timeframeMs = 7 * 86400000;
+            else if (currentTimeframe === 'all') {
+                if (rawHistoryData.length > 0) {
+                    timeframeMs = now - rawHistoryData[0].timestamp;
+                }
+            } else if (currentTimeframe === 'date') {
+                const selectedDate = document.getElementById('date-picker').value;
+                if (selectedDate) {
+                    const startD = new Date(selectedDate); startD.setHours(0,0,0,0);
+                    const endD = new Date(selectedDate); endD.setHours(23,59,59,999);
+                    const filtered = currentChartData.filter(d => d.timestamp >= startD.getTime() && d.timestamp <= endD.getTime() && d.windDirectionDeg != null);
+                    return buildScatterPoints(filtered, startD.getTime(), endD.getTime());
+                }
             }
+
+            const startTime = now - timeframeMs;
+            const endTime = now;
+            const filtered = currentChartData.filter(d => d.timestamp >= startTime && d.timestamp <= endTime && d.windDirectionDeg != null && d.windDirectionDeg !== -1);
+
+            return buildScatterPoints(filtered, startTime, endTime);
         }
-        
-        // Zeitmesser um das Intervall (z.B. 15 Min) weiterschieben
-        iterDate = new Date(iterDate.getTime() + stepMins * 60000);
-    }
 
-    return { labels, values };
-}
-
-        function updateChart() {
-            const { labels, values } = processChartData();
-            const config = metricConfigs[currentMetric];
-            const ctx = document.getElementById('mainChart').getContext('2d');
-
-            if (mainChart) mainChart.destroy();
-
-            let yAxisConfig = { grid: { color: '#212733' } };
-            if (currentMetric === 'windDirectionDeg') {
-                yAxisConfig = {
-                    ...yAxisConfig,
-                    min: 0,
-                    max: 360,
-                    ticks: {
-                        stepSize: 45,
-                        callback: function(value) { return getWindDirectionText(value); }
-                    }
+        function buildScatterPoints(filtered, startTime, endTime) {
+            const scatterPoints = filtered.map(d => {
+                const ratio = (d.timestamp - startTime) / (endTime - startTime); // 0 (alt) bis 1 (neu)
+                const r = Math.max(0, Math.min(100, ratio * 100)); // Radius von 0 bis 100
+                const deg = d.windDirectionDeg;
+                const rad = deg * Math.PI / 180;
+                
+                // Polarkoordinaten in Kartesische Koordinaten für Chart.js Scatter umrechnen
+                const x = r * Math.sin(rad);
+                const y = r * Math.cos(rad);
+                
+                const dateStr = new Date(d.timestamp).toLocaleTimeString("de-DE", { hour: '2-digit', minute: '2-digit' }) + 
+                                (currentTimeframe === '7d' || currentTimeframe === 'all' ? ' (' + new Date(d.timestamp).toLocaleDateString("de-DE", { day: '2-digit', month: '2-digit' }) + ')' : '');
+                
+                return {
+                    x: x,
+                    y: y,
+                    deg: deg,
+                    timestamp: d.timestamp,
+                    timeStr: dateStr
                 };
-            } else if (currentMetric === 'uvIndex') {
-                yAxisConfig = {
-                    ...yAxisConfig,
-                    min: 0, // Verhindert negative Werte auf der Y-Achse zuverlässig
-                    ticks: {
-                        precision: 0 // Sorgt dafür, dass UV-Schritte als ganze Zahlen angezeigt werden (optional, aber übersichtlicher)
-                    }
-                };
+            });
+
+            return { scatterPoints, startTime, endTime };
+        }
+
+        function processChartData() {
+            if (!currentChartData || !currentChartData.length) return { labels: [], values: [] };
+            
+            const now = Date.now() - timeShiftMs;
+            let startTime, endTime = now;
+            let stepMins = 15;
+            let filtered = currentChartData;
+
+            if (currentTimeframe === '1h') {
+                startTime = now - 3600000;
+                filtered = currentChartData.filter(d => d.timestamp >= startTime && d.timestamp <= endTime);
+            } else if (currentTimeframe === '24h') {
+                startTime = now - 86400000;
+                filtered = currentChartData.filter(d => d.timestamp >= startTime && d.timestamp <= endTime);
+            } else if (currentTimeframe === '7d') {
+                startTime = now - (7 * 86400000);
+                stepMins = 60;
+                filtered = currentChartData.filter(d => d.timestamp >= startTime && d.timestamp <= endTime);
+            } else if (currentTimeframe === 'date') {
+                const selectedDate = document.getElementById('date-picker').value;
+                const startD = new Date(selectedDate); startD.setHours(0,0,0,0);
+                const endD = new Date(selectedDate); endD.setHours(23,59,59,999);
+                startTime = startD.getTime();
+                endTime = endD.getTime();
+            } else if (currentTimeframe === 'all') {
+                startTime = currentChartData[0].timestamp;
+                stepMins = 24 * 60;
             }
 
-          mainChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: config.label,
-                        data: values,
-                        borderColor: config.color,
-                        backgroundColor: config.bg,
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.3,
-                        spanGaps: false,  // <--- NEU: false = Lücke anzeigen, true = durchgehende Linie ziehen
-                        pointRadius: function(context) {
-                            // Standard-Größe je nach Ansicht
-                            let defaultRadius = (currentTimeframe === '1h' || currentTimeframe === 'all') ? 3 : 0;
-                            
-                            const index = context.dataIndex;
-                            const data = context.dataset.data;
-                            const currentVal = data[index];
+            const groups = {};
+            filtered.forEach(d => {
+                const date = new Date(d.timestamp);
+                let key;
+                if (currentTimeframe === '1h' || currentTimeframe === '24h' || currentTimeframe === 'date') {
+                    const m = Math.floor(date.getMinutes() / 15) * 15;
+                    date.setMinutes(m, 0, 0);
+                    key = date.toLocaleTimeString("de-DE", {hour: '2-digit', minute:'2-digit'});
+                } else if (currentTimeframe === '7d') {
+                    date.setMinutes(0, 0, 0);
+                    key = date.toLocaleString("de-DE", { day: '2-digit', month: '2-digit', hour: '2-digit' }) + "h";
+                } else if (currentTimeframe === 'all') {
+                    key = date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                }
 
-                            // Wenn gar kein Wert da ist -> unsichtbar
-                            if (currentVal === null) return 0;
-
-                            // Vorherigen und nächsten Wert prüfen (oder null, wenn am Rand)
-                            const prevVal = index > 0 ? data[index - 1] : null;
-                            const nextVal = index < data.length - 1 ? data[index + 1] : null;
-
-                            // Wenn der Punkt komplett isoliert ist (links und rechts fehlen Werte)
-                            if (prevVal === null && nextVal === null) {
-                                return 1; // Zeige diesen isolierten Wert als sichtbaren Punkt!
-                            }
-
-                            return defaultRadius;
-                        },
-                        pointHoverRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: { 
-                        legend: { display: true, position: 'top', align: 'end' },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let val = context.parsed.y;
-                                    if (currentMetric === 'windDirectionDeg') {
-                                        return `${config.label}: ${getWindDirectionText(val)} (${val}°)`;
-                                    }
-                                    return `${config.label}: ${val.toFixed(1)}`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } },
-                        y: yAxisConfig
-                    }
+                if (!groups[key]) groups[key] = [];
+                if (d[currentMetric] != null && d[currentMetric] !== -1) {
+                    groups[key].push(d[currentMetric]);
                 }
             });
+
+            const labels = [];
+            const values = [];
+            let iterDate = new Date(startTime);
+            
+            if (currentTimeframe === '1h' || currentTimeframe === '24h' || currentTimeframe === 'date') {
+                const m = Math.floor(iterDate.getMinutes() / 15) * 15;
+                iterDate.setMinutes(m, 0, 0);
+            } else if (currentTimeframe === '7d') {
+                iterDate.setMinutes(0, 0, 0);
+            } else if (currentTimeframe === 'all') {
+                iterDate.setHours(0, 0, 0, 0);
+            }
+
+            while (iterDate.getTime() <= endTime) {
+                let key;
+                if (currentTimeframe === '1h' || currentTimeframe === '24h' || currentTimeframe === 'date') {
+                    key = iterDate.toLocaleTimeString("de-DE", {hour: '2-digit', minute:'2-digit'});
+                } else if (currentTimeframe === '7d') {
+                    key = iterDate.toLocaleString("de-DE", { day: '2-digit', month: '2-digit', hour: '2-digit' }) + "h";
+                } else if (currentTimeframe === 'all') {
+                    key = iterDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                }
+                
+                if (labels.length === 0 || labels[labels.length - 1] !== key) {
+                    labels.push(key);
+                    if (groups[key] && groups[key].length > 0) {
+                        const arr = groups[key];
+                        if (currentMetric === 'uvIndex') {
+                            values.push(Math.max(...arr));
+                        } else {
+                            values.push(arr.reduce((a, b) => a + b, 0) / arr.length);
+                        }
+                    } else {
+                        values.push(null);
+                    }
+                }
+                iterDate = new Date(iterDate.getTime() + stepMins * 60000);
+            }
+
+            return { labels, values };
+        }
+
+        function updateChart() {
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            if (mainChart) mainChart.destroy();
+
+            // UMSCHALTUNG: Windrose als Polardiagramm VS. Standard-Liniendiagramm
+            if (currentMetric === 'windDirectionDeg') {
+                const { scatterPoints } = processWindRoseData();
+                const config = metricConfigs['windDirectionDeg'];
+
+                mainChart = new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: config.label,
+                            data: scatterPoints,
+                            showLine: true,
+                            borderColor: config.color,
+                            backgroundColor: config.bg,
+                            borderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true, position: 'top', align: 'end' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const p = context.raw;
+                                        return `Uhrzeit: ${p.timeStr} | Windrichtung: ${getWindDirectionText(p.deg)} (${p.deg}°)`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { min: -125, max: 125, display: false },
+                            y: { min: -125, max: 125, display: false }
+                        }
+                    },
+                    plugins: [windRosePlugin]
+                });
+
+            } else {
+                // Standard Liniendiagramm für alle anderen Wetterwerte
+                const { labels, values } = processChartData();
+                const config = metricConfigs[currentMetric];
+
+                let yAxisConfig = { grid: { color: '#212733' } };
+                if (currentMetric === 'uvIndex') {
+                    yAxisConfig = { ...yAxisConfig, min: 0, ticks: { precision: 0 } };
+                }
+
+                mainChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: config.label,
+                            data: values,
+                            borderColor: config.color,
+                            backgroundColor: config.bg,
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3,
+                            spanGaps: false,
+                            pointRadius: function(context) {
+                                let defaultRadius = (currentTimeframe === '1h' || currentTimeframe === 'all') ? 3 : 0;
+                                const index = context.dataIndex;
+                                const data = context.dataset.data;
+                                const currentVal = data[index];
+
+                                if (currentVal === null) return 0;
+
+                                const prevVal = index > 0 ? data[index - 1] : null;
+                                const nextVal = index < data.length - 1 ? data[index + 1] : null;
+
+                                if (prevVal === null && nextVal === null) {
+                                    return 1;
+                                }
+                                return defaultRadius;
+                            },
+                            pointHoverRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: { 
+                            legend: { display: true, position: 'top', align: 'end' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let val = context.parsed.y;
+                                        return `${config.label}: ${val.toFixed(1)}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } },
+                            y: yAxisConfig
+                        }
+                    }
+                });
+            }
         }
 
         function renderDaysOverview() {
