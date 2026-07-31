@@ -639,7 +639,7 @@
                 if (currentTimeframe === '1h') {
                     key = date.toLocaleTimeString("de-DE", {hour: '2-digit', minute:'2-digit'});
                 } else if (currentTimeframe === '24h' || currentTimeframe === 'date') {
-                    const m = Math.floor(date.getMinutes() / 10) * 10;
+                    const m = Math.floor(date.getMinutes() / 15) * 15;
                     date.setMinutes(m, 0, 0);
                     key = date.toLocaleTimeString("de-DE", {hour: '2-digit', minute:'2-digit'});
                 } else if (currentTimeframe === '7d') {
