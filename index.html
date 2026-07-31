@@ -625,53 +625,107 @@
         }
 
         function processChartData() {
-            if (!currentChartData || !currentChartData.length) return { labels: [], values: [] };
-            let filtered = currentChartData;
-            const now = Date.now();
+    if (!currentChartData || !currentChartData.length) return { labels: [], values: [] };
+    
+    const now = Date.now();
+    let startTime, endTime = now;
+    let stepMins = 15; // Standard-Raster: 15 Minuten
+    let filtered = currentChartData;
 
-            if (currentTimeframe === '1h') filtered = currentChartData.filter(d => d.timestamp >= now - 3600000);
-            if (currentTimeframe === '24h') filtered = currentChartData.filter(d => d.timestamp >= now - 86400000);
+    // 1. Start- und Endzeitpunkt sowie das Intervall bestimmen
+    if (currentTimeframe === '1h') {
+        startTime = now - 3600000;
+        filtered = currentChartData.filter(d => d.timestamp >= startTime);
+    } else if (currentTimeframe === '24h') {
+        startTime = now - 86400000;
+        filtered = currentChartData.filter(d => d.timestamp >= startTime);
+    } else if (currentTimeframe === '7d') {
+        startTime = now - (7 * 86400000);
+        stepMins = 60; // Im 7-Tage-View auf 1 Stunde gruppieren
+        filtered = currentChartData.filter(d => d.timestamp >= startTime);
+    } else if (currentTimeframe === 'date') {
+        const selectedDate = document.getElementById('date-picker').value;
+        const startD = new Date(selectedDate); startD.setHours(0,0,0,0);
+        const endD = new Date(selectedDate); endD.setHours(23,59,59,999);
+        startTime = startD.getTime();
+        endTime = endD.getTime();
+    } else if (currentTimeframe === 'all') {
+        startTime = currentChartData[0].timestamp;
+        stepMins = 24 * 60; // Im Allzeit-View 1 Tag pro Schritt
+    }
 
-            const groups = {};
-            filtered.forEach(d => {
-                const date = new Date(d.timestamp);
-                let key;
-                if (currentTimeframe === '1h') {
-                    key = date.toLocaleTimeString("de-DE", {hour: '2-digit', minute:'2-digit'});
-                } else if (currentTimeframe === '24h' || currentTimeframe === 'date') {
-                    const m = Math.floor(date.getMinutes() / 15) * 15;
-                    date.setMinutes(m, 0, 0);
-                    key = date.toLocaleTimeString("de-DE", {hour: '2-digit', minute:'2-digit'});
-                } else if (currentTimeframe === '7d') {
-                    date.setMinutes(0, 0, 0);
-                    key = date.toLocaleString("de-DE", { day: '2-digit', month: '2-digit', hour: '2-digit' }) + "h";
-                } else if (currentTimeframe === 'all') {
-                    key = date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
-                }
-
-                if (!groups[key]) groups[key] = [];
-                if (d[currentMetric] != null && d[currentMetric] !== -1) {
-                    groups[key].push(d[currentMetric]);
-                }
-            });
-
-            const labels = [];
-            const values = [];
-            Object.keys(groups).forEach(key => {
-                labels.push(key);
-                const arr = groups[key];
-                if (arr.length > 0) {
-                    if (currentMetric === 'windDirectionDeg') {
-                        values.push(arr[Math.floor(arr.length / 2)]);
-                    } else {
-                        values.push(arr.reduce((a, b) => a + b, 0) / arr.length);
-                    }
-                } else {
-                    values.push(null);
-                }
-            });
-            return { labels, values };
+    // 2. Vorhandene Daten in ein "Dictionary" sortieren
+    const groups = {};
+    filtered.forEach(d => {
+        const date = new Date(d.timestamp);
+        let key;
+        if (currentTimeframe === '1h' || currentTimeframe === '24h' || currentTimeframe === 'date') {
+            const m = Math.floor(date.getMinutes() / 15) * 15; // 15-Minuten-Raster
+            date.setMinutes(m, 0, 0);
+            key = date.toLocaleTimeString("de-DE", {hour: '2-digit', minute:'2-digit'});
+        } else if (currentTimeframe === '7d') {
+            date.setMinutes(0, 0, 0);
+            key = date.toLocaleString("de-DE", { day: '2-digit', month: '2-digit', hour: '2-digit' }) + "h";
+        } else if (currentTimeframe === 'all') {
+            key = date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
         }
+
+        if (!groups[key]) groups[key] = [];
+        if (d[currentMetric] != null && d[currentMetric] !== -1) {
+            groups[key].push(d[currentMetric]);
+        }
+    });
+
+    // 3. X-Achse MATHEMATISCH LÜCKENLOS aufbauen
+    const labels = [];
+    const values = [];
+    let iterDate = new Date(startTime);
+    
+    // iterDate (Startzeitpunkt) auf das gewählte Raster abrunden, damit es synchron ist
+    if (currentTimeframe === '1h' || currentTimeframe === '24h' || currentTimeframe === 'date') {
+        const m = Math.floor(iterDate.getMinutes() / 15) * 15;
+        iterDate.setMinutes(m, 0, 0);
+    } else if (currentTimeframe === '7d') {
+        iterDate.setMinutes(0, 0, 0);
+    } else if (currentTimeframe === 'all') {
+        iterDate.setHours(0, 0, 0, 0);
+    }
+
+    // Gehe in festen Schritten von Start bis Ende durch die Zeit
+    while (iterDate.getTime() <= endTime) {
+        let key;
+        if (currentTimeframe === '1h' || currentTimeframe === '24h' || currentTimeframe === 'date') {
+            key = iterDate.toLocaleTimeString("de-DE", {hour: '2-digit', minute:'2-digit'});
+        } else if (currentTimeframe === '7d') {
+            key = iterDate.toLocaleString("de-DE", { day: '2-digit', month: '2-digit', hour: '2-digit' }) + "h";
+        } else if (currentTimeframe === 'all') {
+            key = iterDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
+        }
+        
+        // Verhindert doppelte Keys (z.B. bei Zeitumstellungen)
+        if (labels.length === 0 || labels[labels.length - 1] !== key) {
+            labels.push(key);
+            
+            // Haben wir für diesen Zeitpunkt Daten?
+            if (groups[key] && groups[key].length > 0) {
+                const arr = groups[key];
+                if (currentMetric === 'windDirectionDeg') {
+                    values.push(arr[Math.floor(arr.length / 2)]);
+                } else {
+                    values.push(arr.reduce((a, b) => a + b, 0) / arr.length);
+                }
+            } else {
+                // KEINE DATEN -> null pushen. Das erzeugt die gewollte Lücke/den Abstand!
+                values.push(null);
+            }
+        }
+        
+        // Zeitmesser um das Intervall (z.B. 15 Min) weiterschieben
+        iterDate = new Date(iterDate.getTime() + stepMins * 60000);
+    }
+
+    return { labels, values };
+}
 
         function updateChart() {
             const { labels, values } = processChartData();
@@ -693,7 +747,7 @@
                 };
             }
 
-            mainChart = new Chart(ctx, {
+          mainChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
@@ -705,6 +759,7 @@
                         borderWidth: 2,
                         fill: true,
                         tension: 0.3,
+                        spanGaps: false,  // <--- NEU: false = Lücke anzeigen, true = durchgehende Linie ziehen
                         pointRadius: (currentTimeframe === '1h' || currentTimeframe === 'all') ? 3 : 0,
                         pointHoverRadius: 6
                     }]
