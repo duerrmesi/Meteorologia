@@ -187,7 +187,6 @@
             </div>
         </div>
     </div>
-
     <script>
         const FIREBASE_BASE = "https://meteorologia-377e2-default-rtdb.europe-west1.firebasedatabase.app";
         const FIREBASE_LATEST = `${FIREBASE_BASE}/messwerte.json`;
@@ -202,9 +201,12 @@
         let currentMetric = 'temperature';
         let currentTimeframe = '24h';
         
-        // ZENTRALE ZEIT-VARIABLEN (Erlauben stufenloses Zoomen und Verschieben)
-        let currentSpanMs = 24 * 3600000; // Angezeigtes Zeitfenster in Millisekunden
-        let timeShiftMs = 0;              // Verschiebung in die Vergangenheit
+        let currentSpanMs = 24 * 3600000; 
+        let timeShiftMs = 0;              
+
+        // Variablen zum Fixieren der Y-Achse während des Ziehens
+        let lockedYMin = null;
+        let lockedYMax = null;
 
         const metricConfigs = {
             temperature: { label: 'Temperatur (°C)', color: '#ff9b26', bg: 'rgba(255, 155, 38, 0.1)' },
@@ -215,7 +217,7 @@
             rainLast24h: { label: 'Niederschlag (mm)', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.1)' }
         };
 
-        // --- Custom Interaction Mode: RADIAL HOVER (Für Anforderung 5) ---
+        // --- Custom Interaction Mode: RADIAL HOVER ---
         Chart.Interaction.modes.radial = function(chart, e, options, useFinalPosition) {
             const position = Chart.helpers.getRelativePosition(e, chart);
             const xAxis = chart.scales.x;
@@ -235,7 +237,6 @@
             meta.data.forEach((el, index) => {
                 const ptRadius = Math.hypot(el.x - centerX, el.y - centerY);
                 const diff = Math.abs(ptRadius - mouseRadius);
-                // Toleranz für den Radius: ±15 Pixel
                 if (diff < minDiff && diff < 15) {
                     minDiff = diff;
                     closest = { datasetIndex: 0, index: index, element: el };
@@ -244,7 +245,7 @@
             return closest ? [closest] : [];
         };
 
-        // --- Custom Chart.js Plugin: WINDROSE BACKGROUND (Für Anforderung 2 & 1) ---
+        // --- Windrose Plugin ---
         const windRosePlugin = {
             id: 'windRoseBg',
             beforeDraw(chart, args, options) {
@@ -256,7 +257,6 @@
                 const centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
                 const centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
                 
-                // Exakte Berechnung des 100%-Radius relativ zur dynamischen X-Achse
                 const width = chart.chartArea.right - chart.chartArea.left;
                 const pixelsPerUnit = width / (2 * xAxis.max);
                 const maxRadius = 100 * pixelsPerUnit;
@@ -270,7 +270,6 @@
                 const startTime = options.startTime;
                 const endTime = options.endTime;
 
-                // Konzentrische Zeit-Ringe zeichnen (25%, 50%, 75%, 100%)
                 const rings = [0.25, 0.5, 0.75, 1.0];
                 rings.forEach(ratio => {
                     const r = maxRadius * ratio;
@@ -278,7 +277,6 @@
                     ctx.arc(centerX, centerY, r, 0, 2 * Math.PI);
                     ctx.stroke();
 
-                    // Anforderung 2: Uhrzeiten an die inneren Kreise schreiben
                     if (startTime && endTime) {
                         const timeVal = startTime + ratio * (endTime - startTime);
                         const d = new Date(timeVal);
@@ -289,7 +287,6 @@
                             timeStr = d.toLocaleDateString("de-DE", { day: '2-digit', month: '2-digit' });
                         }
 
-                        // Halbtransparenter Hintergrund für bessere Lesbarkeit
                         ctx.fillStyle = 'rgba(20, 24, 32, 0.8)';
                         ctx.fillRect(centerX - 20, centerY - r - 6, 40, 12);
                         
@@ -299,7 +296,6 @@
                     }
                 });
 
-                // Kompass-Achsen & Beschriftungen
                 const directions = [
                     { label: 'N', deg: 0 }, { label: 'NO', deg: 45 }, { label: 'O', deg: 90 },
                     { label: 'SO', deg: 135 }, { label: 'S', deg: 180 }, { label: 'SW', deg: 225 },
@@ -328,50 +324,78 @@
             }
         };
 
-        // --- MAUSRAD ZOOM LOGIK (Für Anforderung 4) ---
-        document.getElementById('chartContainer').addEventListener('wheel', function(e) {
+        // --- ZOOM LOGIK: Mauszeiger bleibt im Zentrum ---
+        const container = document.getElementById('chartContainer');
+        
+        container.addEventListener('wheel', function(e) {
             e.preventDefault();
-            const zoomAmount = 0.15; // 15% pro Scroll
+            
+            const rect = container.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            
+            let chartAreaLeft = 0;
+            let chartAreaRight = container.clientWidth;
+            if (mainChart && mainChart.chartArea) {
+                chartAreaLeft = mainChart.chartArea.left;
+                chartAreaRight = mainChart.chartArea.right;
+            }
+            const chartWidth = chartAreaRight - chartAreaLeft;
+            const clampedX = Math.max(chartAreaLeft, Math.min(chartAreaRight, mouseX));
+            const mouseRatio = (clampedX - chartAreaLeft) / chartWidth;
+            
+            const now = Date.now();
+            const currentEndTime = now - timeShiftMs;
+            const currentStartTime = currentEndTime - currentSpanMs;
+            
+            // Exakter Zeitpunkt unter dem Mauszeiger
+            const mouseTimestamp = currentStartTime + mouseRatio * currentSpanMs;
+            
+            const zoomAmount = 0.15;
+            let newSpanMs = currentSpanMs;
             if (e.deltaY > 0) {
-                currentSpanMs *= (1 + zoomAmount); // Zoom Out
+                newSpanMs *= (1 + zoomAmount); // Herauszoomen
             } else {
-                currentSpanMs *= (1 - zoomAmount); // Zoom In
+                newSpanMs *= (1 - zoomAmount); // Hineinzoomen
             }
             
-            // Limits: Min 15 Minuten, Max 1 Jahr
-            if (currentSpanMs < 15 * 60000) currentSpanMs = 15 * 60000; 
-            if (currentSpanMs > 365 * 86400000) currentSpanMs = 365 * 86400000;
+            if (newSpanMs < 15 * 60000) newSpanMs = 15 * 60000; 
+            if (newSpanMs > 365 * 86400000) newSpanMs = 365 * 86400000;
+            
+            currentSpanMs = newSpanMs;
+            
+            // Setzt den Punkt unter dem Mauszeiger exakt in die Mitte des neuen Intervalls
+            timeShiftMs = now - (mouseTimestamp + currentSpanMs / 2);
+            if (timeShiftMs < 0) timeShiftMs = 0;
             
             updateTimeShiftDisplay();
             updateChart();
         }, { passive: false });
 
-        // --- DRAG & DROP PANNING LOGIK (Verschieben mit gedrückter Maustaste) ---
-        const container = document.getElementById('chartContainer');
+        // --- DRAG & DROP PANNING LOGIK mit Y-Achsen-Fixierung beim Ziehen ---
         let isDragging = false;
         let lastMouseX = 0;
 
         container.addEventListener('mousedown', function(e) {
             isDragging = true;
             lastMouseX = e.clientX;
-            // Cursor ändern, um zu zeigen, dass man "greift"
             container.style.cursor = 'grabbing';
+
+            // Y-Achsen-Skalierung für die Dauer des Ziehens einfrieren
+            if (mainChart && mainChart.scales.y) {
+                lockedYMin = mainChart.scales.y.min;
+                lockedYMax = mainChart.scales.y.max;
+            }
         });
 
         container.addEventListener('mousemove', function(e) {
             if (!isDragging) return;
             
             const deltaX = e.clientX - lastMouseX;
-            lastMouseX = e.clientX; // Für das nächste Event aktualisieren
+            lastMouseX = e.clientX;
             
-            // Berechnen, wie viele Millisekunden ein Pixel im aktuellen Zoom-Level entspricht
             const pixelsPerMs = currentSpanMs / container.clientWidth;
-            
-            // Wenn wir nach rechts ziehen (deltaX ist positiv), wollen wir weiter in die Vergangenheit.
-            // timeShiftMs ist die Verschiebung in die Vergangenheit, wird also erhöht.
             timeShiftMs += deltaX * pixelsPerMs;
             
-            // Verhindern, dass man in die Zukunft scrollt (timeShiftMs darf nicht kleiner als 0 werden)
             if (timeShiftMs < 0) {
                 timeShiftMs = 0;
             }
@@ -380,15 +404,25 @@
             updateChart();
         });
 
-        // Wenn die Maustaste losgelassen wird oder die Maus den Chart verlässt
         container.addEventListener('mouseup', function() {
-            isDragging = false;
-            container.style.cursor = 'crosshair'; // Zurück zum Standard-Cursor
+            if (isDragging) {
+                isDragging = false;
+                container.style.cursor = 'crosshair';
+                // Y-Achsen-Sperre aufheben und beim Loslassen einmal sauber skalieren
+                lockedYMin = null;
+                lockedYMax = null;
+                updateChart();
+            }
         });
 
         container.addEventListener('mouseleave', function() {
-            isDragging = false;
-            container.style.cursor = 'crosshair';
+            if (isDragging) {
+                isDragging = false;
+                container.style.cursor = 'crosshair';
+                lockedYMin = null;
+                lockedYMax = null;
+                updateChart();
+            }
         });
 
         function updateTimeShiftDisplay() {
@@ -505,7 +539,6 @@
                 if (rawHistoryData.length > 0) currentSpanMs = Date.now() - rawHistoryData[0].timestamp;
                 else currentSpanMs = 86400000;
                 
-                // Allzeit Daten extra abrufen, falls sie über die 7 Tage hinausgehen
                 try {
                     const res = await fetch(`${FIREBASE_BASE}/historie.json?orderBy=%22timestamp%22`);
                     const data = await res.json();
@@ -575,12 +608,12 @@
 
             const scatterPoints = filtered.map(d => {
                 const ratio = (d.timestamp - startTime) / currentSpanMs;
-                const r = Math.max(0, Math.min(100, ratio * 100)); // Mapping von Zeit auf 0-100 Radius
+                const r = Math.max(0, Math.min(100, ratio * 100));
                 const rad = d.windDirectionDeg * Math.PI / 180;
                 
                 return {
                     x: r * Math.sin(rad),
-                    y: r * Math.cos(rad), // Y-Achse ist bei Chart.js Scatter positiv = oben (Nord)
+                    y: r * Math.cos(rad),
                     deg: d.windDirectionDeg,
                     timestamp: d.timestamp,
                     timeStr: new Date(d.timestamp).toLocaleString("de-DE")
@@ -590,6 +623,7 @@
             return { scatterPoints, startTime, endTime };
         }
 
+        // --- Interpolations-Logik für fließende Linien-Übergänge an den Rändern ---
         function processChartData() {
             if (!currentChartData || !currentChartData.length) return { labels: [], values: [] };
             
@@ -597,14 +631,49 @@
             const endTime = now - timeShiftMs;
             const startTime = endTime - currentSpanMs;
             
-            // Dynamische Gruppierung je nach Zoom-Level!
             let stepMins = 15;
             if (currentSpanMs <= 2 * 3600000) stepMins = 5;
             else if (currentSpanMs <= 24 * 3600000) stepMins = 15;
             else if (currentSpanMs <= 7 * 86400000) stepMins = 60;
             else stepMins = 24 * 60;
 
-            const filtered = currentChartData.filter(d => d.timestamp >= startTime && d.timestamp <= endTime);
+            const metric = currentMetric;
+            const sorted = currentChartData.filter(d => d[metric] != null && d[metric] !== -1);
+            let effectiveData = [...sorted];
+            
+            if (sorted.length >= 2) {
+                // Linken Rand interpolieren
+                let idxFirstInside = sorted.findIndex(d => d.timestamp >= startTime);
+                if (idxFirstInside > 0) {
+                    const p1 = sorted[idxFirstInside - 1];
+                    const p2 = sorted[idxFirstInside];
+                    if (p1.timestamp < startTime && p2.timestamp >= startTime) {
+                        const ratio = (startTime - p1.timestamp) / (p2.timestamp - p1.timestamp);
+                        const interpVal = p1[metric] + ratio * (p2[metric] - p1[metric]);
+                        effectiveData.push({ timestamp: startTime, [metric]: interpVal });
+                    }
+                }
+                
+                // Rechten Rand interpolieren
+                let idxLastInside = -1;
+                for (let i = sorted.length - 1; i >= 0; i--) {
+                    if (sorted[i].timestamp <= endTime) {
+                        idxLastInside = i;
+                        break;
+                    }
+                }
+                if (idxLastInside >= 0 && idxLastInside < sorted.length - 1) {
+                    const p1 = sorted[idxLastInside];
+                    const p2 = sorted[idxLastInside + 1];
+                    if (p1.timestamp <= endTime && p2.timestamp > endTime) {
+                        const ratio = (endTime - p1.timestamp) / (p2.timestamp - p1.timestamp);
+                        const interpVal = p1[metric] + ratio * (p2[metric] - p1[metric]);
+                        effectiveData.push({ timestamp: endTime, [metric]: interpVal });
+                    }
+                }
+            }
+
+            const filtered = effectiveData.filter(d => d.timestamp >= startTime && d.timestamp <= endTime);
             
             const groups = {};
             filtered.forEach(d => {
@@ -618,9 +687,7 @@
                 else key = date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
 
                 if (!groups[key]) groups[key] = [];
-                if (d[currentMetric] != null && d[currentMetric] !== -1) {
-                    groups[key].push(d[currentMetric]);
-                }
+                groups[key].push(d[metric]);
             });
 
             const labels = [];
@@ -650,15 +717,12 @@
             return { labels, values };
         }
 
-       function updateChart() {
+        function updateChart() {
             const ctx = document.getElementById('mainChart').getContext('2d');
             
-            // Prüfen, ob wir die Windrose (Scatter) oder einen Liniengraph anzeigen
             const isWindRose = currentMetric === 'windDirectionDeg';
             const requiredType = isWindRose ? 'scatter' : 'line';
 
-            // Logik: Wir zerstören den Chart nur noch, wenn sich der Diagramm-Typ ändert 
-            // (z. B. Wechsel von Temperatur-Linie zu Windrose). Beim reinen Zoomen updaten wir nur!
             let needsRebuild = true;
             if (mainChart) {
                 if (mainChart.config.type === requiredType) {
@@ -683,7 +747,6 @@
                 else windMaxY = 110 / aspect;
 
                 if (needsRebuild) {
-                    // Neues Diagramm erstellen (nur beim ersten Laden oder Tab-Wechsel)
                     mainChart = new Chart(ctx, {
                         type: 'scatter',
                         data: {
@@ -701,7 +764,7 @@
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
-                            animation: { duration: 0 }, // Kürzere Animation für flüssigeres Mausrad-Zoomen
+                            animation: { duration: 400 },
                             interaction: { mode: 'radial', intersect: false },
                             plugins: {
                                 legend: { display: true, position: 'top', align: 'end' },
@@ -719,7 +782,6 @@
                         plugins: [windRosePlugin]
                     });
                 } else {
-                    // NUR UPDATE: Streck- und Stauch-Effekt beim Zoomen
                     mainChart.data.datasets[0].data = scatterPoints;
                     mainChart.options.plugins.windRoseBg.startTime = startTime;
                     mainChart.options.plugins.windRoseBg.endTime = endTime;
@@ -738,6 +800,12 @@
                 let yAxisConfig = { grid: { color: '#212733' } };
                 if (currentMetric === 'uvIndex') {
                     yAxisConfig = { ...yAxisConfig, min: 0, ticks: { precision: 0 } };
+                }
+                
+                // Y-Achse während des Ziehens fixieren
+                if (lockedYMin != null && lockedYMax != null) {
+                    yAxisConfig.min = lockedYMin;
+                    yAxisConfig.max = lockedYMax;
                 }
 
                 if (needsRebuild) {
@@ -761,7 +829,7 @@
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
-                            animation: { duration: 0 }, // Kürzere Animation
+                            animation: { duration: 400 },
                             interaction: { mode: 'index', intersect: false },
                             plugins: { 
                                 legend: { display: true, position: 'top', align: 'end' },
@@ -771,7 +839,6 @@
                         }
                     });
                 } else {
-                    // NUR UPDATE: Streck- und Stauch-Effekt beim Liniengraph
                     mainChart.data.labels = labels;
                     mainChart.data.datasets[0].data = values;
                     mainChart.data.datasets[0].label = config.label;
@@ -816,6 +883,6 @@
         loadLive();
         initDashboard();
         setInterval(loadLive, 60000); 
-    </script>
+    </script>   
 </body>
 </html>
