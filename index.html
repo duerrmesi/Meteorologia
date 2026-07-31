@@ -760,7 +760,28 @@
                         fill: true,
                         tension: 0.3,
                         spanGaps: false,  // <--- NEU: false = Lücke anzeigen, true = durchgehende Linie ziehen
-                        pointRadius: (currentTimeframe === '1h' || currentTimeframe === 'all') ? 3 : 0,
+                        pointRadius: function(context) {
+                            // Standard-Größe je nach Ansicht
+                            let defaultRadius = (currentTimeframe === '1h' || currentTimeframe === 'all') ? 3 : 0;
+                            
+                            const index = context.dataIndex;
+                            const data = context.dataset.data;
+                            const currentVal = data[index];
+
+                            // Wenn gar kein Wert da ist -> unsichtbar
+                            if (currentVal === null) return 0;
+
+                            // Vorherigen und nächsten Wert prüfen (oder null, wenn am Rand)
+                            const prevVal = index > 0 ? data[index - 1] : null;
+                            const nextVal = index < data.length - 1 ? data[index + 1] : null;
+
+                            // Wenn der Punkt komplett isoliert ist (links und rechts fehlen Werte)
+                            if (prevVal === null && nextVal === null) {
+                                return 3; // Zeige diesen isolierten Wert als sichtbaren Punkt!
+                            }
+
+                            return defaultRadius;
+                        },
                         pointHoverRadius: 6
                     }]
                 },
