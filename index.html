@@ -745,6 +745,14 @@
                         callback: function(value) { return getWindDirectionText(value); }
                     }
                 };
+            } else if (currentMetric === 'uvIndex') {
+                yAxisConfig = {
+                    ...yAxisConfig,
+                    min: 0, // Verhindert negative Werte auf der Y-Achse zuverlässig
+                    ticks: {
+                        precision: 0 // Sorgt dafür, dass UV-Schritte als ganze Zahlen angezeigt werden (optional, aber übersichtlicher)
+                    }
+                };
             }
 
           mainChart = new Chart(ctx, {
