@@ -605,15 +605,28 @@
             return { labels, values };
         }
 
-        function updateChart() {
+       function updateChart() {
             const ctx = document.getElementById('mainChart').getContext('2d');
-            if (mainChart) mainChart.destroy();
+            
+            // Prüfen, ob wir die Windrose (Scatter) oder einen Liniengraph anzeigen
+            const isWindRose = currentMetric === 'windDirectionDeg';
+            const requiredType = isWindRose ? 'scatter' : 'line';
 
-            if (currentMetric === 'windDirectionDeg') {
+            // Logik: Wir zerstören den Chart nur noch, wenn sich der Diagramm-Typ ändert 
+            // (z. B. Wechsel von Temperatur-Linie zu Windrose). Beim reinen Zoomen updaten wir nur!
+            let needsRebuild = true;
+            if (mainChart) {
+                if (mainChart.config.type === requiredType) {
+                    needsRebuild = false;
+                } else {
+                    mainChart.destroy();
+                }
+            }
+
+            if (isWindRose) {
                 const { scatterPoints, startTime, endTime } = processWindRoseData();
                 const config = metricConfigs['windDirectionDeg'];
 
-                // Anforderung 1: Dynamische Min/Max Skalierung passend zur Breite/Höhe!
                 const container = document.getElementById('chartContainer');
                 const w = container.clientWidth || 800;
                 const h = container.clientHeight || 380;
@@ -624,46 +637,54 @@
                 if (aspect > 1) windMaxX = 110 * aspect;
                 else windMaxY = 110 / aspect;
 
-                mainChart = new Chart(ctx, {
-                    type: 'scatter',
-                    data: {
-                        datasets: [{
-                            label: config.label,
-                            data: scatterPoints,
-                            showLine: true,
-                            borderColor: config.color,
-                            backgroundColor: config.bg,
-                            borderWidth: 2,
-                            pointRadius: 2,       // Anforderung 3: Kleinere Punkte
-                            pointHoverRadius: 6
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: { 
-                            mode: 'radial',       // Anforderung 5: Radiales Hovering an gleicher Zeitachse
-                            intersect: false 
+                if (needsRebuild) {
+                    // Neues Diagramm erstellen (nur beim ersten Laden oder Tab-Wechsel)
+                    mainChart = new Chart(ctx, {
+                        type: 'scatter',
+                        data: {
+                            datasets: [{
+                                label: config.label,
+                                data: scatterPoints,
+                                showLine: true,
+                                borderColor: config.color,
+                                backgroundColor: config.bg,
+                                borderWidth: 2,
+                                pointRadius: 2,
+                                pointHoverRadius: 6
+                            }]
                         },
-                        plugins: {
-                            legend: { display: true, position: 'top', align: 'end' },
-                            windRoseBg: { startTime: startTime, endTime: endTime },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const p = context.raw;
-                                        return `Zeit: ${p.timeStr} | Wind: ${getWindDirectionText(p.deg)} (${p.deg}°)`;
-                                    }
-                                }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: { duration: 400 }, // Kürzere Animation für flüssigeres Mausrad-Zoomen
+                            interaction: { mode: 'radial', intersect: false },
+                            plugins: {
+                                legend: { display: true, position: 'top', align: 'end' },
+                                windRoseBg: { startTime: startTime, endTime: endTime },
+                                tooltip: { callbacks: { label: function(context) {
+                                    const p = context.raw;
+                                    return `Zeit: ${p.timeStr} | Wind: ${getWindDirectionText(p.deg)} (${p.deg}°)`;
+                                } } }
+                            },
+                            scales: {
+                                x: { min: -windMaxX, max: windMaxX, display: false },
+                                y: { min: -windMaxY, max: windMaxY, display: false }
                             }
                         },
-                        scales: {
-                            x: { min: -windMaxX, max: windMaxX, display: false },
-                            y: { min: -windMaxY, max: windMaxY, display: false }
-                        }
-                    },
-                    plugins: [windRosePlugin]
-                });
+                        plugins: [windRosePlugin]
+                    });
+                } else {
+                    // NUR UPDATE: Streck- und Stauch-Effekt beim Zoomen
+                    mainChart.data.datasets[0].data = scatterPoints;
+                    mainChart.options.plugins.windRoseBg.startTime = startTime;
+                    mainChart.options.plugins.windRoseBg.endTime = endTime;
+                    mainChart.options.scales.x.min = -windMaxX;
+                    mainChart.options.scales.x.max = windMaxX;
+                    mainChart.options.scales.y.min = -windMaxY;
+                    mainChart.options.scales.y.max = windMaxY;
+                    
+                    mainChart.update();
+                }
 
             } else {
                 const { labels, values } = processChartData();
@@ -674,34 +695,48 @@
                     yAxisConfig = { ...yAxisConfig, min: 0, ticks: { precision: 0 } };
                 }
 
-                mainChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: config.label,
-                            data: values,
-                            borderColor: config.color,
-                            backgroundColor: config.bg,
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.3,
-                            spanGaps: false,
-                            pointRadius: currentSpanMs <= 24 * 3600000 ? 2 : 0,
-                            pointHoverRadius: 6
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        plugins: { 
-                            legend: { display: true, position: 'top', align: 'end' },
-                            tooltip: { callbacks: { label: function(context) { return `${config.label}: ${context.parsed.y.toFixed(1)}`; } } }
+                if (needsRebuild) {
+                    mainChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: config.label,
+                                data: values,
+                                borderColor: config.color,
+                                backgroundColor: config.bg,
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.3,
+                                spanGaps: false,
+                                pointRadius: currentSpanMs <= 24 * 3600000 ? 2 : 0,
+                                pointHoverRadius: 6
+                            }]
                         },
-                        scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } }, y: yAxisConfig }
-                    }
-                });
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: { duration: 400 }, // Kürzere Animation
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: { 
+                                legend: { display: true, position: 'top', align: 'end' },
+                                tooltip: { callbacks: { label: function(context) { return `${config.label}: ${context.parsed.y.toFixed(1)}`; } } }
+                            },
+                            scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } }, y: yAxisConfig }
+                        }
+                    });
+                } else {
+                    // NUR UPDATE: Streck- und Stauch-Effekt beim Liniengraph
+                    mainChart.data.labels = labels;
+                    mainChart.data.datasets[0].data = values;
+                    mainChart.data.datasets[0].label = config.label;
+                    mainChart.data.datasets[0].borderColor = config.color;
+                    mainChart.data.datasets[0].backgroundColor = config.bg;
+                    mainChart.data.datasets[0].pointRadius = currentSpanMs <= 24 * 3600000 ? 2 : 0;
+                    mainChart.options.scales.y = yAxisConfig;
+                    
+                    mainChart.update();
+                }
             }
         }
 
