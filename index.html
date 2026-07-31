@@ -346,6 +346,51 @@
             updateChart();
         }, { passive: false });
 
+        // --- DRAG & DROP PANNING LOGIK (Verschieben mit gedrückter Maustaste) ---
+        const container = document.getElementById('chartContainer');
+        let isDragging = false;
+        let lastMouseX = 0;
+
+        container.addEventListener('mousedown', function(e) {
+            isDragging = true;
+            lastMouseX = e.clientX;
+            // Cursor ändern, um zu zeigen, dass man "greift"
+            container.style.cursor = 'grabbing';
+        });
+
+        container.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+            
+            const deltaX = e.clientX - lastMouseX;
+            lastMouseX = e.clientX; // Für das nächste Event aktualisieren
+            
+            // Berechnen, wie viele Millisekunden ein Pixel im aktuellen Zoom-Level entspricht
+            const pixelsPerMs = currentSpanMs / container.clientWidth;
+            
+            // Wenn wir nach rechts ziehen (deltaX ist positiv), wollen wir weiter in die Vergangenheit.
+            // timeShiftMs ist die Verschiebung in die Vergangenheit, wird also erhöht.
+            timeShiftMs += deltaX * pixelsPerMs;
+            
+            // Verhindern, dass man in die Zukunft scrollt (timeShiftMs darf nicht kleiner als 0 werden)
+            if (timeShiftMs < 0) {
+                timeShiftMs = 0;
+            }
+            
+            updateTimeShiftDisplay();
+            updateChart();
+        });
+
+        // Wenn die Maustaste losgelassen wird oder die Maus den Chart verlässt
+        container.addEventListener('mouseup', function() {
+            isDragging = false;
+            container.style.cursor = 'crosshair'; // Zurück zum Standard-Cursor
+        });
+
+        container.addEventListener('mouseleave', function() {
+            isDragging = false;
+            container.style.cursor = 'crosshair';
+        });
+
         function updateTimeShiftDisplay() {
             const tag = document.getElementById('shift-status-tag');
             let spanText = "";
