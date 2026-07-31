@@ -324,7 +324,7 @@
             }
         };
 
-        // --- ZOOM LOGIK: Mauszeiger bleibt im Zentrum ---
+// --- ZOOM LOGIK: Exakt zentriert auf den Mauszeiger ---
         const container = document.getElementById('chartContainer');
         
         container.addEventListener('wheel', function(e) {
@@ -347,7 +347,7 @@
             const currentEndTime = now - timeShiftMs;
             const currentStartTime = currentEndTime - currentSpanMs;
             
-            // Exakter Zeitpunkt unter dem Mauszeiger
+            // Exakter Zeitpunkt, auf den der Mauszeiger aktuell gerichtet ist
             const mouseTimestamp = currentStartTime + mouseRatio * currentSpanMs;
             
             const zoomAmount = 0.15;
@@ -363,8 +363,8 @@
             
             currentSpanMs = newSpanMs;
             
-            // Setzt den Punkt unter dem Mauszeiger exakt in die Mitte des neuen Intervalls
-            timeShiftMs = now - (mouseTimestamp + currentSpanMs / 2);
+            // Korrektur: Der Punkt unter dem Mauszeiger bleibt exakt an derselben Pixelposition fixiert
+            timeShiftMs = now - mouseTimestamp - currentSpanMs * (1 - mouseRatio);
             if (timeShiftMs < 0) timeShiftMs = 0;
             
             updateTimeShiftDisplay();
