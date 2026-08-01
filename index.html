@@ -401,7 +401,93 @@
             if (timeShiftMs < 0) {
                 timeShiftMs = 0;
             }
-            
+
+           // --- TOUCH-LOGIK (Smartphones & Tablets) ---
+        let initialPinchDistance = null;
+        let touchStartSpanMs = null;
+
+        container.addEventListener('touchstart', function(e) {
+            // Verhindert das Scrollen der ganzen Webseite beim Wischen auf dem Chart
+            if(e.cancelable) e.preventDefault(); 
+
+            if (e.touches.length === 1) {
+                // Ein Finger: Panning (Verschieben)
+                isDragging = true;
+                lastMouseX = e.touches[0].clientX;
+                if (mainChart && mainChart.scales.y) {
+                    lockedYMin = mainChart.scales.y.min;
+                    lockedYMax = mainChart.scales.y.max;
+                }
+            } else if (e.touches.length === 2) {
+                // Zwei Finger: Pinch-to-Zoom Start
+                isDragging = false;
+                initialPinchDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                touchStartSpanMs = currentSpanMs;
+                if (mainChart && mainChart.scales.y) {
+                    lockedYMin = mainChart.scales.y.min;
+                    lockedYMax = mainChart.scales.y.max;
+                }
+            }
+        }, { passive: false });
+
+        container.addEventListener('touchmove', function(e) {
+            if(e.cancelable) e.preventDefault();
+
+            if (e.touches.length === 1 && isDragging) {
+                // Verschieben
+                const deltaX = e.touches[0].clientX - lastMouseX;
+                lastMouseX = e.touches[0].clientX;
+                
+                const pixelsPerMs = currentSpanMs / container.clientWidth;
+                timeShiftMs += deltaX * pixelsPerMs;
+                
+                if (timeShiftMs < 0) timeShiftMs = 0;
+                
+                updateTimeShiftDisplay();
+                updateChart();
+            } else if (e.touches.length === 2 && initialPinchDistance) {
+                // Zoomen
+                const currentDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                
+                const ratio = initialPinchDistance / currentDistance;
+                let newSpanMs = touchStartSpanMs * ratio;
+                
+                // Limits wie beim Mausrad
+                if (newSpanMs < 15 * 60000) newSpanMs = 15 * 60000;
+                if (newSpanMs > 365 * 86400000) newSpanMs = 365 * 86400000;
+                
+                currentSpanMs = newSpanMs;
+                updateTimeShiftDisplay();
+                updateChart();
+            }
+        }, { passive: false });
+
+        container.addEventListener('touchend', function(e) {
+            if (e.touches.length < 2) {
+                initialPinchDistance = null; // Zoom-Modus beenden
+            }
+            if (e.touches.length === 0) {
+                // Alle Finger weg -> Sperren aufheben und sauber rendern
+                isDragging = false;
+                lockedYMin = null;
+                lockedYMax = null;
+                updateChart();
+            }
+        });
+        
+        container.addEventListener('touchcancel', function(e) {
+             isDragging = false;
+             initialPinchDistance = null;
+             lockedYMin = null;
+             lockedYMax = null;
+             updateChart();
+        }); 
             updateTimeShiftDisplay();
             updateChart();
         });
