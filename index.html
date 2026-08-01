@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wetter Analytics Dashboard</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0b0e14">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -879,7 +881,14 @@
                 `<div class="min-max-card"><div class="date">${d.label}</div><div class="min-max-values"><span class="min-val">${Math.min(...d.temps).toFixed(1)} °C</span><span class="max-val">${Math.max(...d.temps).toFixed(1)} °C</span></div></div>`
             ).join('');
         }
-
+// PWA Service Worker Registrierung
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker registriert', reg))
+                    .catch(err => console.error('Service Worker Fehler', err));
+            });
+        }
         loadLive();
         initDashboard();
         setInterval(loadLive, 60000); 
