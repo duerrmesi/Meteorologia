@@ -67,6 +67,13 @@
         .date-picker { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 8px; font-size: 12px; color-scheme: dark; outline: none; cursor: pointer; color: var(--text-muted); }
         
         .chart-canvas-container { height: 380px; width: 100%; position: relative; cursor: crosshair; }
+        .chart-canvas-container { 
+            height: 380px; 
+            width: 100%; 
+            position: relative; 
+            cursor: crosshair; 
+            touch-action: none; /* <--- DAS HIER HINZUFÜGEN */
+        }
         
         .history-list-title { font-size: 15px; font-weight: 600; margin-bottom: 15px; display: flex; justify-content: space-between; }
         .history-grid-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
