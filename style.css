@@ -1,0 +1,350 @@
+/* --- FARBVARIABLEN UND THEMING --- */
+:root {
+    --bg-color: #0b0e14;
+    --card-bg: #141820;
+    --card-shadow-dark: #07090d;
+    --card-shadow-light: #212733;
+    --text-main: #ffffff;
+    --text-muted: #8b95a5;
+    --accent-orange: linear-gradient(145deg, #ff9b26, #e65c00);
+    --accent-blue: #3b82f6;
+    --accent-green: #10b981;
+    --accent-purple: #8b5cf6;
+}
+
+/* --- GRUNDEINSTELLUNGEN --- */
+* { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    font-family: 'Poppins', sans-serif; 
+}
+
+body { 
+    background-color: var(--bg-color); 
+    color: var(--text-main); 
+    min-height: 100vh; 
+    padding: 25px; 
+    display: flex; 
+    justify-content: center; 
+}
+
+.dashboard-container { 
+    max-width: 1400px; 
+    width: 100%; 
+}
+
+.dashboard-header { 
+    text-align: center; 
+    margin-bottom: 25px; 
+    font-size: 26px; 
+    font-weight: 600; 
+    letter-spacing: 2px; 
+    text-transform: uppercase; 
+}
+
+.dashboard-grid { 
+    display: grid; 
+    grid-template-columns: 360px 1fr; 
+    gap: 25px; 
+}
+
+/* --- NEUMORPHISM KARTEN-DESIGN --- */
+.neu-card { 
+    background: var(--card-bg); 
+    border-radius: 20px; 
+    box-shadow: 8px 8px 16px var(--card-shadow-dark), -8px -8px 16px var(--card-shadow-light); 
+    padding: 20px; 
+}
+
+.left-column, .right-column { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 25px; 
+}
+
+.orange-card { 
+    background: var(--accent-orange); 
+    border-radius: 25px; 
+    padding: 25px; 
+    box-shadow: 10px 10px 20px rgba(0,0,0,0.4), -5px -5px 15px rgba(255, 155, 38, 0.2), inset 2px 2px 5px rgba(255,255,255,0.3); 
+    color: white; 
+    position: relative; 
+}
+
+.orange-card .header-row { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    font-size: 13px; 
+}
+
+.orange-card .temp-large { 
+    font-size: 60px; 
+    font-weight: 700; 
+    line-height: 1; 
+    margin: 15px 0 10px; 
+}
+
+/* --- BADGES UND METRIKEN --- */
+.warning-badges { 
+    display: flex; 
+    gap: 8px; 
+    margin-bottom: 12px; 
+    flex-wrap: wrap; 
+}
+
+.badge { 
+    background: rgba(0, 0, 0, 0.3); 
+    padding: 4px 10px; 
+    border-radius: 8px; 
+    font-size: 11px; 
+    font-weight: 500; 
+    display: none; 
+    align-items: center; 
+    gap: 5px; 
+}
+
+.calculated-pills { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 10px; 
+    margin-top: 15px; 
+}
+
+.pill { 
+    background: rgba(0,0,0,0.2); 
+    border: 1px solid rgba(255,255,255,0.2); 
+    padding: 8px 12px; 
+    border-radius: 12px; 
+    font-size: 12px; 
+    backdrop-filter: blur(5px); 
+}
+
+.pill span { 
+    display: block; 
+    font-size: 10px; 
+    opacity: 0.8; 
+}
+
+.metrics-grid { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 15px; 
+}
+
+.metric-card { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    padding: 18px 10px; 
+    text-align: center; 
+    position: relative; 
+}
+
+.metric-card i { 
+    font-size: 22px; 
+    margin-bottom: 8px; 
+    color: var(--text-muted); 
+}
+
+.metric-title { 
+    font-size: 11px; 
+    color: var(--text-muted); 
+    margin-bottom: 4px; 
+}
+
+.metric-value { 
+    font-size: 18px; 
+    font-weight: 600; 
+}
+
+.offline-tag { 
+    font-size: 9px; 
+    color: #ef4444; 
+    background: rgba(239, 68, 68, 0.1); 
+    padding: 2px 6px; 
+    border-radius: 4px; 
+    margin-top: 4px; 
+}
+
+/* --- TAGESÜBERSICHT UND CHART-STYLING --- */
+.days-grid { 
+    display: grid; 
+    grid-template-columns: repeat(6, 1fr); 
+    gap: 12px; 
+}
+
+.day-card { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    padding: 12px 8px; 
+    border-radius: 15px; 
+    background: var(--card-bg); 
+    box-shadow: 4px 4px 8px var(--card-shadow-dark), -4px -4px 8px var(--card-shadow-light); 
+    text-align: center; 
+}
+
+.day-card .day-name { 
+    font-size: 12px; 
+    font-weight: 500; 
+    color: var(--text-muted); 
+    margin-bottom: 4px; 
+}
+
+.day-card .day-temp { 
+    font-size: 15px; 
+    font-weight: 700; 
+    color: #ff9b26; 
+}
+
+.chart-section { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 15px; 
+}
+
+.chart-controls { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    flex-wrap: wrap; 
+    gap: 10px; 
+}
+
+.chart-tabs, .timeframe-tabs, .shift-tabs { 
+    display: flex; 
+    background: var(--bg-color); 
+    padding: 4px; 
+    border-radius: 12px; 
+    gap: 4px; 
+    align-items: center; 
+    flex-wrap: wrap; 
+}
+
+.tab-btn { 
+    background: transparent; 
+    border: none; 
+    color: var(--text-muted); 
+    padding: 6px 12px; 
+    border-radius: 8px; 
+    font-size: 12px; 
+    font-weight: 500; 
+    cursor: pointer; 
+    transition: all 0.2s ease; 
+}
+
+.tab-btn:hover { 
+    color: var(--text-main); 
+}
+
+.tab-btn.active { 
+    background: var(--card-bg); 
+    color: var(--text-main); 
+    box-shadow: 2px 2px 5px var(--card-shadow-dark); 
+}
+
+.timeframe-btn.active { 
+    background: #ff9b26; 
+    color: white; 
+}
+
+.export-btn { 
+    background: rgba(16, 185, 129, 0.2); 
+    color: #10b981; 
+    border: 1px solid rgba(16, 185, 129, 0.3); 
+}
+
+.date-picker { 
+    background: rgba(255,255,255,0.05); 
+    border: 1px solid rgba(255,255,255,0.1); 
+    padding: 5px 10px; 
+    border-radius: 8px; 
+    font-size: 12px; 
+    color-scheme: dark; 
+    outline: none; 
+    cursor: pointer; 
+    color: var(--text-muted); 
+}
+
+/* --- ABSOLUT WICHTIGER CSS-FIX FÜR MOBILE TOUCH-GESTEN --- */
+.chart-canvas-container { 
+    height: 380px; 
+    width: 100%; 
+    position: relative; 
+    cursor: crosshair; 
+    /* Verhindert, dass der Smartphone-Browser das Diagramm zum Bildschirm-Scrollen benutzt */
+    touch-action: none; 
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+#mainChart {
+    /* Bindet die Touch-Sperre auch direkt an das Canvas-Element */
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.history-list-title { 
+    font-size: 15px; 
+    font-weight: 600; 
+    margin-bottom: 15px; 
+    display: flex; 
+    justify-content: space-between; 
+}
+
+.history-grid-container { 
+    display: grid; 
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 15px; 
+}
+
+.min-max-card { 
+    background: var(--bg-color); 
+    padding: 12px; 
+    border-radius: 12px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 6px; 
+}
+
+.min-max-card .date { 
+    font-size: 12px; 
+    color: var(--text-muted); 
+}
+
+.min-max-values { 
+    display: flex; 
+    justify-content: space-between; 
+    font-size: 14px; 
+    font-weight: 600; 
+}
+
+.min-val { color: var(--accent-blue); }
+.max-val { color: #ff9b26; }
+
+.shift-container { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    background: rgba(255,255,255,0.02); 
+    padding: 6px 12px; 
+    border-radius: 12px; 
+    margin-top: 5px; 
+}
+
+.shift-status { 
+    font-size: 11px; 
+    color: #ff9b26; 
+    font-weight: 500; 
+}
+
+/* RESPONSIVE DESIGN FÜR HANDY-SCHIRME */
+@media (max-width: 1024px) {
+    .dashboard-grid { grid-template-columns: 1fr; }
+    .days-grid { grid-template-columns: repeat(3, 1fr); }
+    .history-grid-container { grid-template-columns: repeat(2, 1fr); }
+}
