@@ -1,6 +1,6 @@
 // Service Worker Cache-Name für die Progressive Web App
 // Bei jeder Änderung an den gecachten Dateien die Versionsnummer erhöhen!
-const CACHE_NAME = 'wetter-dashboard-v10';
+const CACHE_NAME = 'wetter-dashboard-v11';
 
 
 // Liste aller Dateien, die lokal auf dem Smartphone zwischengespeichert werden sollen
