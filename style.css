@@ -538,43 +538,87 @@ body {
 }
 
 @media (max-width: 480px) {
-    body { padding: 12px; overflow-x: hidden; }
+    body { padding: 10px; overflow-x: hidden; }
     
-    .dashboard-header { font-size: 18px; }
-    .dashboard-grid { gap: 16px; }
+    .dashboard-header-container { 
+        flex-direction: row; 
+        flex-wrap: wrap; 
+        justify-content: space-between; 
+        gap: 10px; 
+    }
+    .dashboard-header { font-size: 16px; text-align: left; flex: 1; }
+    .pwa-btn { padding: 6px 12px; font-size: 11px; }
+
+    .dashboard-grid { gap: 12px; }
 
     .blob-1 { width: 80vw; height: 80vw; }
     .blob-2 { width: 90vw; height: 90vw; }
     .blob-3 { width: 70vw; height: 70vw; }
 
-    .orange-card { padding: 18px; }
-    .orange-card .temp-large { font-size: 42px; }
+    .orange-card { padding: 15px; }
+    .orange-card .temp-large { font-size: 46px; margin: 10px 0; }
 
-    .calculated-pills { grid-template-columns: 1fr; gap: 8px; }
-    .span-2 { grid-column: span 1; }
+    /* Pills kompakter in 2 Spalten, spart sehr viel Höhe */
+    .calculated-pills { grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 10px; }
+    .pill { padding: 6px 8px; font-size: 11px; }
+    .pill span { font-size: 9px; }
+    .span-2 { grid-column: span 2; }
 
-    .metrics-grid { gap: 10px; }
-    .metric-card { padding: 12px 8px; }
-
-    .gauge-container { width: 80px; height: 80px; }
-    .gauge-container svg { width: 80px; height: 80px; }
-    .gauge-center i { font-size: 14px; }
-    .metric-value { font-size: 13px; }
-
-    .days-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-
-    .chart-controls { flex-direction: column; align-items: stretch; }
-    .chart-tabs, .timeframe-tabs { justify-content: center; }
+    .metrics-grid { gap: 8px; }
+    .metric-card { padding: 12px 6px; }
     
-    .timeframe-tabs {
+    .metric-title { font-size: 10px; margin-bottom: 6px; }
+    .gauge-container { width: 75px; height: 75px; }
+    .gauge-container svg { width: 75px; height: 75px; }
+    .gauge-center i { font-size: 14px; }
+    .metric-value { font-size: 12px; }
+
+    /* Horizontal scrollbare Tagesvorschau */
+    .days-grid { 
+        display: flex; 
+        overflow-x: auto; 
+        flex-wrap: nowrap; 
+        gap: 8px; 
+        padding-bottom: 5px; 
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+    .days-grid::-webkit-scrollbar { display: none; }
+    .day-card { flex: 0 0 70px; padding: 10px 6px; }
+
+    /* Chart Controls horizontal scrollbar machen */
+    .chart-controls { flex-direction: column; align-items: stretch; gap: 8px; }
+    
+    .chart-tabs, .timeframe-tabs, .shift-tabs {
+        justify-content: flex-start;
         overflow-x: auto;
         flex-wrap: nowrap;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
+        padding-bottom: 2px;
     }
-    .timeframe-tabs::-webkit-scrollbar { display: none; }
+    .chart-tabs::-webkit-scrollbar, .timeframe-tabs::-webkit-scrollbar, .shift-tabs::-webkit-scrollbar { 
+        display: none; 
+    }
+    
+    /* Verhindert, dass Buttons gequetscht werden */
+    .tab-btn { flex-shrink: 0; padding: 6px 10px; font-size: 11px; }
+    .date-picker { flex-shrink: 0; }
+    .shift-tabs span { white-space: nowrap; flex-shrink: 0; }
 
-    .shift-container { flex-direction: column; gap: 8px; align-items: flex-start; }
-    .chart-canvas-container { height: 280px; }
-    .history-grid-container { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .shift-container { flex-direction: column; gap: 8px; align-items: flex-start; padding: 6px 10px; }
+    .chart-canvas-container { height: 260px; }
+    
+    /* Horizontal scrollbare Extreme */
+    .history-grid-container { 
+        display: flex; 
+        overflow-x: auto; 
+        flex-wrap: nowrap; 
+        gap: 10px; 
+        padding-bottom: 5px; 
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+    .history-grid-container::-webkit-scrollbar { display: none; }
+    .min-max-card { flex: 0 0 130px; }
 }
