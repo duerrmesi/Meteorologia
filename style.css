@@ -1,0 +1,624 @@
+/* --- FARBVARIABLEN UND THEMING --- */
+:root {
+    --bg-color: #0b0e14;
+    --card-bg: rgba(20, 24, 32, 0.4);
+    --card-border: rgba(255, 255, 255, 0.08);
+    --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    
+    --text-main: #ffffff;
+    --text-muted: #8b95a5;
+    
+    /* Farben für Gauges */
+    --accent-blue: #3b82f6;
+    --accent-green: #10b981;
+    --accent-purple: #8b5cf6;
+    --accent-orange: #ff9b26;
+    --accent-cyan: #06b6d4;
+    --accent-fuchsia: #a855f7;
+}
+
+/* --- GRUNDEINSTELLUNGEN --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    min-height: 100vh;
+    padding: 25px;
+    display: flex;
+    justify-content: center;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* --- HINTERGRUND-AUREN (Blobs) --- */
+.ambient-glow {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    z-index: -1;
+    opacity: 0.6;
+    animation: floatBlob 15s infinite ease-in-out alternate;
+}
+
+.blob-1 {
+    top: -10%; left: -10%;
+    width: 40vw; height: 40vw;
+    background: #3b82f6; /* Tiefblau */
+}
+.blob-2 {
+    bottom: -15%; right: -10%;
+    width: 50vw; height: 50vw;
+    background: #8b5cf6; /* Lila */
+    animation-delay: -5s;
+    animation-duration: 20s;
+}
+.blob-3 {
+    top: 30%; left: 40%;
+    width: 30vw; height: 30vw;
+    background: #ff9b26; /* Orange */
+    animation-delay: -10s;
+    opacity: 0.4;
+}
+
+@keyframes floatBlob {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(40px, 60px) scale(1.1); }
+}
+
+/* --- LAYOUT --- */
+.dashboard-container {
+    max-width: 1400px;
+    width: 100%;
+    z-index: 1;
+}
+
+.dashboard-header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.dashboard-header {
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-align: center;
+    flex-grow: 1;
+}
+
+/* PWA Button */
+.pwa-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.pwa-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 25px;
+}
+
+.left-column, .right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+/* --- GLASSMORPHISM KARTEN --- */
+.glass-card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--card-shadow);
+    padding: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.interactive-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.orange-card {
+    /* Mix aus orangem Gradient und Glassmorphism */
+    background: linear-gradient(145deg, rgba(255, 155, 38, 0.6), rgba(230, 92, 0, 0.4));
+    color: white;
+}
+
+.header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+}
+
+.wifi-status {
+    margin-left: 8px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(0,0,0,0.2);
+    padding: 2px 6px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.wifi-status i { color: #10b981; } 
+.wifi-status.weak i { color: #ff9b26; } 
+.wifi-status.bad i { color: #ef4444; } 
+
+.temp-large {
+    font-size: 60px;
+    font-weight: 700;
+    line-height: 1;
+    margin: 15px 0 10px;
+}
+
+.warning-badges {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.badge {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 500;
+    display: none;
+    align-items: center;
+    gap: 5px;
+}
+
+/* --- PILLS (Kleine Info-Blasen) --- */
+.calculated-pills {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.pill {
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+}
+
+.pill span {
+    display: block;
+    font-size: 10px;
+    opacity: 0.8;
+}
+
+.span-2 { grid-column: span 2; }
+
+/* --- METRIKEN & SVG GAUGES --- */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.metric-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 10px;
+    text-align: center;
+    position: relative;
+}
+
+.metric-title {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+/* SVG Gauge Container */
+.gauge-container {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gauge-container svg {
+    width: 100px;
+    height: 100px;
+    transform: rotate(-90deg); /* Startpunkt oben (12 Uhr) */
+}
+
+/* Hintergrund-Ring */
+.gauge-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.05);
+    stroke-width: 6;
+}
+
+/* Vordergrund-Ring (animiert) */
+.gauge-value {
+    fill: none;
+    stroke-width: 6;
+    stroke-linecap: round;
+    /* Umfang berechnen: 2 * PI * r = 2 * PI * 40 = ~251.2 */
+    stroke-dasharray: 251.2;
+    stroke-dashoffset: 251.2; /* Initial komplett leer */
+    transition: stroke-dashoffset 1s ease-out;
+}
+
+/* Innerer Bereich des Tachos */
+.gauge-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.gauge-center i {
+    font-size: 18px;
+}
+
+.static-center i {
+    margin-bottom: 5px;
+}
+
+.metric-value {
+    font-size: 16px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.offline-tag {
+    font-size: 9px;
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    position: absolute;
+    bottom: 8px;
+}
+
+/* --- TAGESÜBERSICHT --- */
+.days-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+}
+
+.day-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 8px;
+    border-radius: 15px;
+    text-align: center;
+}
+
+.day-card .day-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.day-card .day-temp {
+    font-size: 15px;
+    font-weight: 700;
+    color: #ff9b26;
+}
+
+/* --- CHARTS --- */
+.chart-section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.chart-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.chart-tabs, .timeframe-tabs, .shift-tabs {
+    display: flex;
+    background: rgba(0,0,0,0.3);
+    padding: 4px;
+    border-radius: 12px;
+    gap: 4px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+    color: var(--text-main);
+    background: rgba(255,255,255,0.05);
+}
+
+.tab-btn.active {
+    background: rgba(255,255,255,0.1);
+    color: var(--text-main);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.timeframe-btn.active {
+    background: #ff9b26;
+    color: white;
+}
+
+.export-btn {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.date-picker {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    color-scheme: dark;
+    outline: none;
+    cursor: pointer;
+    color: var(--text-muted);
+}
+
+.chart-canvas-container {
+    height: 380px;
+    width: 100%;
+    position: relative;
+    cursor: crosshair;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+#mainChart {
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.shift-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0,0,0,0.15);
+    padding: 6px 12px;
+    border-radius: 12px;
+    margin-top: 5px;
+}
+
+.shift-status {
+    font-size: 11px;
+    color: #ff9b26;
+    font-weight: 500;
+}
+
+/* --- EXTREMWERTE --- */
+.history-list-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.history-grid-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.min-max-card {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.min-max-card .date {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.min-max-values {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.min-val { color: var(--accent-blue); }
+.max-val { color: #ff9b26; }
+
+/* --- SYSTEM-HINWEISE --- */
+.connection-banner {
+    display: none;
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #f87171;
+    text-align: center;
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 20px;
+    backdrop-filter: blur(10px);
+    animation: banner-pulse 2.5s ease-in-out infinite;
+}
+
+.connection-banner.visible {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+@keyframes banner-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.skeleton-card { overflow: hidden; }
+.skeleton-text {
+    background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+    border-radius: 6px;
+    min-height: 14px;
+    min-width: 40px;
+    color: transparent !important;
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* --- RESPONSIVE DESIGN --- */
+@media (max-width: 1024px) {
+    .dashboard-grid { grid-template-columns: 1fr; }
+    .days-grid { grid-template-columns: repeat(3, 1fr); }
+    .history-grid-container { grid-template-columns: repeat(2, 1fr); }
+    .dashboard-header-container { flex-direction: column; gap: 15px; }
+}
+
+@media (max-width: 480px) {
+    body { padding: 10px; overflow-x: hidden; }
+    
+    .dashboard-header-container { 
+        flex-direction: row; 
+        flex-wrap: wrap; 
+        justify-content: space-between; 
+        gap: 10px; 
+    }
+    .dashboard-header { font-size: 16px; text-align: left; flex: 1; }
+    .pwa-btn { padding: 6px 12px; font-size: 11px; }
+
+    .dashboard-grid { gap: 12px; }
+
+    .blob-1 { width: 80vw; height: 80vw; }
+    .blob-2 { width: 90vw; height: 90vw; }
+    .blob-3 { width: 70vw; height: 70vw; }
+
+    .orange-card { padding: 15px; }
+    .orange-card .temp-large { font-size: 46px; margin: 10px 0; }
+
+    /* Pills kompakter in 2 Spalten, spart sehr viel Höhe */
+    .calculated-pills { grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 10px; }
+    .pill { padding: 6px 8px; font-size: 11px; }
+    .pill span { font-size: 9px; }
+    .span-2 { grid-column: span 2; }
+
+    .metrics-grid { gap: 8px; }
+    .metric-card { padding: 12px 6px; }
+    
+    .metric-title { font-size: 10px; margin-bottom: 6px; }
+    .gauge-container { width: 75px; height: 75px; }
+    .gauge-container svg { width: 75px; height: 75px; }
+    .gauge-center i { font-size: 14px; }
+    .metric-value { font-size: 12px; }
+
+    /* Horizontal scrollbare Tagesvorschau */
+    .days-grid { 
+        display: flex; 
+        overflow-x: auto; 
+        flex-wrap: nowrap; 
+        gap: 8px; 
+        padding-bottom: 5px; 
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+    .days-grid::-webkit-scrollbar { display: none; }
+    .day-card { flex: 0 0 70px; padding: 10px 6px; }
+
+    /* Chart Controls horizontal scrollbar machen */
+    .chart-controls { flex-direction: column; align-items: stretch; gap: 8px; }
+    
+    .chart-tabs, .timeframe-tabs, .shift-tabs {
+        justify-content: flex-start;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 2px;
+    }
+    .chart-tabs::-webkit-scrollbar, .timeframe-tabs::-webkit-scrollbar, .shift-tabs::-webkit-scrollbar { 
+        display: none; 
+    }
+    
+    /* Verhindert, dass Buttons gequetscht werden */
+    .tab-btn { flex-shrink: 0; padding: 6px 10px; font-size: 11px; }
+    .date-picker { flex-shrink: 0; }
+    .shift-tabs span { white-space: nowrap; flex-shrink: 0; }
+
+    .shift-container { flex-direction: column; gap: 8px; align-items: flex-start; padding: 6px 10px; }
+    .chart-canvas-container { height: 260px; }
+    
+    /* Horizontal scrollbare Extreme */
+    .history-grid-container { 
+        display: flex; 
+        overflow-x: auto; 
+        flex-wrap: nowrap; 
+        gap: 10px; 
+        padding-bottom: 5px; 
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+    .history-grid-container::-webkit-scrollbar { display: none; }
+    .min-max-card { flex: 0 0 130px; }
+}
