@@ -549,7 +549,31 @@ body {
     .dashboard-header { font-size: 16px; text-align: left; flex: 1; }
     .pwa-btn { padding: 6px 12px; font-size: 11px; }
 
-    .dashboard-grid { gap: 12px; }
+    .dashboard-grid { 
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px; 
+    }
+    
+    .left-column, .right-column {
+        display: contents;
+    }
+    
+    .orange-card {
+        order: 1;
+    }
+    .chart-section {
+        order: 2;
+    }
+    .metrics-grid {
+        order: 3;
+    }
+    .days-grid {
+        order: 4;
+    }
+    .right-column > .glass-card:not(.chart-section) {
+        order: 5;
+    }
 
     .blob-1 { width: 80vw; height: 80vw; }
     .blob-2 { width: 90vw; height: 90vw; }
