@@ -537,7 +537,7 @@ body {
     .dashboard-header-container { flex-direction: column; gap: 15px; }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
     body { padding: 10px; overflow-x: hidden; }
     
     .dashboard-header-container { 
