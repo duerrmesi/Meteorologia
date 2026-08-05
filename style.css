@@ -646,3 +646,55 @@ body {
     .history-grid-container::-webkit-scrollbar { display: none; }
     .min-max-card { flex: 0 0 130px; }
 }
+
+@media (max-width: 480px) {
+    body { padding: 8px; }
+    
+    .dashboard-header { font-size: 14px; }
+    .pwa-btn { padding: 5px 10px; font-size: 10px; }
+    
+    .orange-card { padding: 12px; }
+    .orange-card .temp-large { font-size: 38px; margin: 8px 0; }
+    
+    .header-row { font-size: 11px; }
+    .wifi-status { font-size: 9px; padding: 1px 4px; }
+    
+    .calculated-pills { grid-template-columns: 1fr 1fr; gap: 5px; }
+    .pill { padding: 5px 6px; font-size: 10px; }
+    .pill span { font-size: 8px; }
+    
+    .metrics-grid { gap: 6px; }
+    .metric-card { padding: 10px 4px; }
+    .metric-title { font-size: 9px; margin-bottom: 4px; }
+    .gauge-container { width: 65px; height: 65px; }
+    .gauge-container svg { width: 65px; height: 65px; }
+    .gauge-center i { font-size: 12px; }
+    .metric-value { font-size: 11px; }
+    
+    .day-card { flex: 0 0 60px; padding: 8px 4px; }
+    .day-card .day-name { font-size: 10px; }
+    .day-card .day-temp { font-size: 13px; }
+    
+    .tab-btn { padding: 5px 8px; font-size: 10px; }
+    .date-picker { font-size: 11px; padding: 4px 8px; }
+    
+    .chart-canvas-container { height: 220px; }
+    
+    .min-max-card { flex: 0 0 110px; padding: 10px; }
+    .min-max-card .date { font-size: 10px; }
+    .min-max-values { font-size: 12px; }
+    
+    .history-list-title { font-size: 13px; }
+    
+    .blob-1 { width: 100vw; height: 100vw; }
+    .blob-2 { width: 110vw; height: 110vw; }
+    .blob-3 { width: 80vw; height: 80vw; }
+}
+
+@media (max-width: 360px) {
+    .orange-card .temp-large { font-size: 32px; }
+    .gauge-container { width: 55px; height: 55px; }
+    .gauge-container svg { width: 55px; height: 55px; }
+    .day-card { flex: 0 0 55px; }
+    .chart-canvas-container { height: 200px; }
+}
