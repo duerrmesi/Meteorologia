@@ -698,3 +698,86 @@ body {
     .day-card { flex: 0 0 55px; }
     .chart-canvas-container { height: 200px; }
 }
+
+/* --- PULL TO REFRESH --- */
+.pull-to-refresh::before {
+    content: '';
+    position: fixed;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
+    border: 3px solid #ff9b26;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 1000;
+    transition: top 0.2s ease;
+}
+
+.pull-to-refresh.active::before {
+    top: 20px;
+}
+
+@keyframes spin {
+    to { transform: translateX(-50%) rotate(360deg); }
+}
+
+/* --- UPDATE TOAST --- */
+.update-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    backdrop-filter: blur(24px);
+    box-shadow: var(--card-shadow);
+    z-index: 1000;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.update-toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.update-toast i {
+    color: #ff9b26;
+    font-size: 18px;
+}
+
+.update-toast button {
+    background: #ff9b26;
+    border: none;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.update-toast button:hover {
+    background: #e68a23;
+}
+
+/* --- SKELETON FOR CHART --- */
+.chart-skeleton {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.02) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+    border-radius: 12px;
+    position: absolute;
+    top: 0;
+    left: 0;
+}

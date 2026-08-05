@@ -18,7 +18,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <link rel="stylesheet" href="style.css?v=12">
+    <link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
 
@@ -199,9 +199,10 @@
                         <div class="shift-status" id="shift-status-tag">Lade...</div>
                     </div>
 
-                    <div class="chart-canvas-container" id="chartContainer">
-                        <canvas id="mainChart"></canvas>
-                    </div>
+<div class="chart-canvas-container" id="chartContainer">
+    <div class="chart-skeleton" id="chartSkeleton"></div>
+    <canvas id="mainChart"></canvas>
+</div>
                 </div>
 
                 <div class="glass-card">
@@ -218,6 +219,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=12"></script>
+    <script type="module" src="src/app.js"></script>
 </body>
 </html>

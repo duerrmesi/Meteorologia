@@ -1,14 +1,19 @@
 // Service Worker Cache-Name für die Progressive Web App
 // Bei jeder Änderung an den gecachten Dateien die Versionsnummer erhöhen!
-const CACHE_NAME = 'wetter-dashboard-v12';
+const CACHE_NAME = 'wetter-dashboard-v13';
+const SYNC_TAG = 'weather-sync';
 
 
 // Liste aller Dateien, die lokal auf dem Smartphone zwischengespeichert werden sollen
 const ASSETS = [
   './index.html',
-  './style.css?v=12',
-  './app.js?v=12',
-  './manifest.json?v=12'
+  './style.css?v=13',
+  './manifest.json?v=13',
+  './src/types.js',
+  './src/utils.js',
+  './src/api.js',
+  './src/charts.js',
+  './src/app.js'
 ];
 
 // Installation des Service Workers und Abspeichern der statischen Assets im Browser-Cache
@@ -35,6 +40,20 @@ self.addEventListener('activate', (e) => {
   // Sofort die Kontrolle über alle offenen Tabs/Fenster übernehmen
   self.clients.claim();
 });
+
+// Background Sync für fehlgeschlagene API-Calls
+self.addEventListener('sync', (e) => {
+  if (e.tag === SYNC_TAG) {
+    e.waitUntil(syncWeatherData());
+  }
+});
+
+async function syncWeatherData() {
+  const clients = await self.clients.matchAll();
+  clients.forEach(client => {
+    client.postMessage({ type: 'SYNC_TRIGGERED' });
+  });
+}
 
 // Abfangen von Netzwerk-Anfragen
 self.addEventListener('fetch', (e) => {
