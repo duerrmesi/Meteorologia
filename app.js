@@ -11,8 +11,8 @@ const FIREBASE_7DAYS = `${FIREBASE_BASE}/historie.json?orderBy=%22timestamp%22&l
 
 // --- GLOBAL CHART CONFIGURATION ---
 // Setzt globale Standardfarben für das Chart.js Diagramm
-Chart.defaults.color = '#8b95a5';
-Chart.defaults.borderColor = '#212733';
+Chart.defaults.color = '#687585';
+Chart.defaults.borderColor = '#e3e8ef';
 let mainChart = null; // Globale Referenz auf die Chart.js-Instanz
 
 // --- GLOBALE ZUSTANDSVARIABLEN (STATE MANAGEMENT) ---
@@ -40,6 +40,16 @@ const metricConfigs = {
     uvIndex: { label: 'UV-Index', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
     rainLast24h: { label: 'Niederschlag (mm)', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.1)' }
 };
+
+// Keep the chart palette restrained: orange is reserved for temperature, blue for measurements.
+Object.assign(metricConfigs, {
+    temperature: { color: '#d97706', bg: 'rgba(217, 119, 6, 0.08)' },
+    humidity: { color: '#2563a8', bg: 'rgba(37, 99, 168, 0.08)' },
+    pressure: { color: '#2563a8', bg: 'rgba(37, 99, 168, 0.08)' },
+    windDirectionDeg: { color: '#2563a8', bg: 'rgba(37, 99, 168, 0.08)' },
+    uvIndex: { color: '#2563a8', bg: 'rgba(37, 99, 168, 0.08)' },
+    rainLast24h: { color: '#2563a8', bg: 'rgba(37, 99, 168, 0.08)' }
+});
 
 // ============================================================================
 // 1. MATHEMATISCHE & METEOROLOGISCHE BERECHNUNGEN (SOFTWARE-SENSOREN)
@@ -107,7 +117,7 @@ function calculateFeelsLike(temp, windSpeed, humidity) {
 // SONNENAUFGANG & UNTERGANG (mit SunCalc Bibliothek)
 function updateSunTimes() {
     const sunEl = document.getElementById('sun-times');
-    if (!sunEl || typeof SunCalc === 'undefined') return;
+    if (typeof SunCalc === 'undefined') return;
     
     // HIER DEINE KOORDINATEN EINTRAGEN (Standard: Mitte Deutschland / Kassel)
     const lat = 51.3127;
@@ -117,7 +127,11 @@ function updateSunTimes() {
     const sunrise = times.sunrise.toLocaleTimeString("de-DE", { hour: '2-digit', minute: '2-digit' });
     const sunset = times.sunset.toLocaleTimeString("de-DE", { hour: '2-digit', minute: '2-digit' });
     
-    sunEl.innerHTML = `<i class="fas fa-sun" style="color:#ff9b26"></i> ${sunrise} &nbsp;&nbsp; <i class="fas fa-moon" style="color:#8b5cf6"></i> ${sunset}`;
+    if (sunEl) sunEl.innerHTML = `<i class="fas fa-sun" style="color:#ff9b26"></i> ${sunrise} &nbsp;&nbsp; <i class="fas fa-moon" style="color:#8b5cf6"></i> ${sunset}`;
+    const sunriseEl = document.querySelector('.sunrise-value');
+    const sunsetEl = document.querySelector('.sunset-value');
+    if (sunriseEl) sunriseEl.innerText = sunrise;
+    if (sunsetEl) sunsetEl.innerText = sunset;
 }
 
 // HILFSFUNKTION: Gradangabe (0-360°) in Windrichtungskürzel (z.B. N, NO, O) umrechnen
@@ -170,11 +184,17 @@ function animateValueUpdate(elementId, newText) {
 // FIX #11: Verbindungsstatus-Banner steuern
 function setConnectionStatus(status) {
     const banner = document.getElementById('connection-banner');
+    const label = document.getElementById('connection-label');
+    const chip = document.querySelector('.status-chip');
     if (!banner) return;
     if (status === 'offline') {
         banner.classList.add('visible');
+        if (chip) chip.classList.add('offline');
+        if (label) label.innerText = 'Offline';
     } else {
         banner.classList.remove('visible');
+        if (chip) chip.classList.remove('offline');
+        if (label) label.innerText = 'Online';
     }
 }
 
@@ -385,7 +405,10 @@ function updateGauge(gaugeId, textId, tagId, value, min, max, unit) {
     if (value === -1 || value == null) {
         if (valueText) valueText.innerText = "--";
         if (tagElem) tagElem.style.display = "inline-block";
-        if (gaugeValueCircle) gaugeValueCircle.style.strokeDashoffset = 251.2;
+        if (gaugeValueCircle) {
+            gaugeValueCircle.style.strokeDashoffset = 251.2;
+            if (gaugeValueCircle.tagName.toLowerCase() === 'rect') gaugeValueCircle.setAttribute('width', 0);
+        }
         return;
     }
     
@@ -401,6 +424,9 @@ function updateGauge(gaugeId, textId, tagId, value, min, max, unit) {
         // SVG Kreisumfang ist 251.2. Dashoffset reduziert den sichtbaren Bereich.
         const offset = 251.2 - (percent * 251.2 / 100);
         gaugeValueCircle.style.strokeDashoffset = offset;
+        if (gaugeValueCircle.tagName.toLowerCase() === 'rect') {
+            gaugeValueCircle.setAttribute('width', percent);
+        }
     }
 }
 
@@ -412,10 +438,18 @@ async function loadLive() {
         const data = await res.json();
         if (!data) return;
 
-        setConnectionStatus('online');
+        const rawTimestamp = Number(data.timestamp || 0);
+        const measurementTimestamp = rawTimestamp > 0 && rawTimestamp < 1000000000000 ? rawTimestamp * 1000 : rawTimestamp;
+        const measurementAgeMs = measurementTimestamp > 0 ? Date.now() - measurementTimestamp : Infinity;
+        const stationOnline = measurementAgeMs >= 0 && measurementAgeMs <= 5 * 60 * 1000;
+        setConnectionStatus(stationOnline ? 'online' : 'offline');
 
         animateValueUpdate('temp-main', data.temperature != null ? data.temperature.toFixed(2) + " °C" : "-- °C");
-        animateValueUpdate('dew-point', calculateDewPoint(data.temperature, data.humidity));
+        const dewPoint = calculateDewPoint(data.temperature, data.humidity);
+        const pressureTrend = document.getElementById('pressure-trend')?.innerText || '--';
+        animateValueUpdate('dew-point', dewPoint);
+        animateValueUpdate('dew-point-copy', dewPoint);
+        animateValueUpdate('pressure-trend-copy', pressureTrend);
         animateValueUpdate('feels-like', calculateFeelsLike(data.temperature, data.windSpeed, data.humidity));
         updateSunTimes();
 
@@ -447,6 +481,12 @@ async function loadLive() {
         updateGauge('gauge-windspeed', 'wind-speed-val', 'wind-speed-tag', data.windSpeed, 0, 100, 'km/h');
         updateGauge('gauge-uv', 'uv-val', 'uv-tag', data.uvIndex, 0, 11, '');
         updateGauge('gauge-rain', 'rain-val', 'rain-tag', data.rainLast24h, 0, 50, 'mm');
+        const uvCopy = document.querySelector('.reading-value-copy');
+        if (uvCopy) uvCopy.innerText = data.uvIndex == null || data.uvIndex === -1 ? '--' : data.uvIndex;
+        const compassNeedle = document.querySelector('.compass-needle');
+        if (compassNeedle && data.windDirectionDeg != null && data.windDirectionDeg !== -1) {
+            compassNeedle.style.transform = `translateX(-50%) rotate(${data.windDirectionDeg}deg)`;
+        }
         
         // Kompassrichtung (kein Gauge)
         animateValueUpdate('wind-dir-val', getWindDirectionText(data.windDirectionDeg));
@@ -456,8 +496,13 @@ async function loadLive() {
         if (badgeFrost) badgeFrost.style.display = (data.temperature != null && data.temperature <= 3) ? "inline-flex" : "none";
 
         // Zeitstempel der letzten Aktualisierung anzeigen
-        const date = new Date(data.timestamp || Date.now());
-        document.getElementById('last-update').innerText = "Update: " + date.toLocaleTimeString("de-DE", { hour: '2-digit', minute: '2-digit' });
+        const date = measurementTimestamp > 0 ? new Date(measurementTimestamp) : new Date();
+        const timeLabel = date.toLocaleTimeString("de-DE", { hour: '2-digit', minute: '2-digit' });
+        document.getElementById('last-update').innerText = "Letzte Messung: " + timeLabel;
+        const sidebarUpdate = document.getElementById('sidebar-last-update');
+        if (sidebarUpdate) sidebarUpdate.innerText = "Letzte Messung: " + timeLabel;
+        const sidebarLabel = document.getElementById('sidebar-connection-label');
+        if (sidebarLabel) sidebarLabel.innerText = stationOnline ? 'Online' : 'Offline';
     } catch (e) {
         console.error("Fehler beim Laden der Live-Daten:", e);
         setConnectionStatus('offline');
@@ -477,6 +522,8 @@ async function initDashboard() {
             // Drucktrend initial berechnen
             const pressureTrendElem = document.getElementById('pressure-trend');
             if (pressureTrendElem) pressureTrendElem.innerText = calculatePressureTrend(rawHistoryData);
+            const pressureTrendCopy = document.getElementById('pressure-trend-copy');
+            if (pressureTrendCopy && pressureTrendElem) pressureTrendCopy.innerText = pressureTrendElem.innerText;
 
             // FIX #4: Tagesgruppierung einmalig berechnen und an beide Render-Funktionen übergeben
             const dailyGroups = groupByDay(rawHistoryData);
@@ -1024,3 +1071,90 @@ if (installBtn) {
         deferredPrompt = null;
     });
 }
+
+// Theme preference is local to this dashboard and does not affect sensor logic.
+const themeToggle = document.getElementById('theme-toggle');
+const savedTheme = localStorage.getItem('weatherstation-theme');
+if (savedTheme === 'dark') document.documentElement.classList.add('dark');
+function updateThemeIcon() {
+    if (!themeToggle) return;
+    themeToggle.innerHTML = document.documentElement.classList.contains('dark')
+        ? '<i class="fas fa-sun"></i>'
+        : '<i class="fas fa-moon"></i>';
+}
+updateThemeIcon();
+if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+        document.documentElement.classList.toggle('dark');
+        localStorage.setItem('weatherstation-theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        Chart.defaults.color = document.documentElement.classList.contains('dark') ? '#a7bfd9' : '#607895';
+        Chart.defaults.borderColor = document.documentElement.classList.contains('dark') ? '#1e3b5b' : '#dfe7f0';
+        updateChart();
+        updateThemeIcon();
+    });
+}
+
+// ============================================================================
+// 10. ERWEITERTE NAVIGATION: ANALYSE, HISTORIE, SENSOREN, EINSTELLUNGEN
+// Die Ansichten arbeiten ausschliesslich mit den bereits geladenen Firebase-Daten.
+// ============================================================================
+let extendedHistoryData = [];
+let latestStationData = null;
+let historyViewRange = '7d';
+let historyQuery = '';
+
+const esc = value => String(value ?? '').replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
+const valid = (value) => value !== null && value !== undefined && value !== '' && Number(value) !== -1 && Number.isFinite(Number(value));
+const fmt = (value, unit = '') => valid(value) ? `${Number(value).toFixed(1)}${unit ? ` ${unit}` : ''}` : 'Nicht verfügbar';
+const dateFmt = ts => ts ? new Date(ts).toLocaleDateString('de-DE') : '—';
+const dateTimeFmt = ts => ts ? new Date(ts).toLocaleString('de-DE', {dateStyle:'short', timeStyle:'short'}) : '—';
+const numeric = (rows, key) => rows.map(r => Number(r[key])).filter(Number.isFinite);
+const mean = values => values.length ? values.reduce((a,b) => a+b, 0) / values.length : null;
+const periodRows = (rows, days) => {
+    if (days === 'all') return rows;
+    const cutoff = Date.now() - days * 86400000;
+    return rows.filter(r => Number(r.timestamp) > cutoff);
+};
+function statBlock(rows, key, unit = '') {
+    const values = numeric(rows, key), avg = mean(values);
+    return `<div class="stat-grid"><div><small>Mittel</small><strong>${fmt(avg,unit)}</strong></div><div><small>Minimum</small><strong>${fmt(values.length ? Math.min(...values) : null,unit)}</strong></div><div><small>Maximum</small><strong>${fmt(values.length ? Math.max(...values) : null,unit)}</strong></div><div><small>Spanne</small><strong>${fmt(values.length ? Math.max(...values)-Math.min(...values) : null,unit)}</strong></div></div>`;
+}
+function emptyState(text = 'Für diesen Zeitraum sind keine Messdaten vorhanden.') { return `<div class="empty-state"><i class="fas fa-database"></i><span>${text}</span></div>`; }
+function rowsBetween(start, end) { return extendedHistoryData.filter(r => r.timestamp >= start && r.timestamp < end); }
+function comparePeriod(label, a, b, bLabel) {
+    const fields = [['temperature','Temperaturmittel','°C'],['humidity','Feuchtemittel','%'],['pressure','Druckmittel','hPa'],['rainLast24h','Niederschlag','mm']];
+    return `<div class="compare-row"><div class="compare-label">${label}</div>${fields.map(([key,name,unit]) => { const av=mean(numeric(a,key)), bv=mean(numeric(b,key)); const diff=valid(av)&&valid(bv)?av-bv:null; return `<div class="compare-metric"><small>${name}</small><strong>${fmt(av,unit)}</strong><span class="delta ${diff>=0?'positive':''}">${valid(diff)?`${diff>=0?'+':''}${diff.toFixed(1)} ${unit} vs. ${bLabel}`:'Kein Vergleich'}</span></div>`; }).join('')}</div>`;
+}
+function renderAnalysis() {
+    setTimeout(augmentAnalysisRecords, 0);
+    const target = document.getElementById('analysis-view'); if (!target) return;
+    const rows = extendedHistoryData;
+    if (!rows.length) { target.innerHTML = `<div class="page-heading"><div><h2>Analyse</h2><p>Auswertung und Vergleich historischer Messwerte</p></div></div>${emptyState()}`; return; }
+    const now = Date.now(), todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    const yesterdayStart = todayStart.getTime()-86400000, weekStart = now-7*86400000, prevWeekStart=now-14*86400000;
+    const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0); const prevMonthStart = new Date(monthStart); prevMonthStart.setMonth(prevMonthStart.getMonth()-1);
+    const today=rowsBetween(todayStart.getTime(), now), yesterday=rowsBetween(yesterdayStart,todayStart.getTime()), week=rowsBetween(weekStart,now), prevWeek=rowsBetween(prevWeekStart,weekStart), month=rowsBetween(monthStart.getTime(),now), prevMonth=rowsBetween(prevMonthStart.getTime(),monthStart.getTime());
+    const tempVals=numeric(rows,'temperature'), latestBy = key => rows.reduce((best,r) => valid(r[key]) && (!best || Number(r[key]) > Number(best[key])) ? r : best, null);
+    const records=[['Höchste Temperatur','temperature','°C',true],['Niedrigste Temperatur','temperature','°C',false],['Höchste Luftfeuchtigkeit','humidity','%',true],['Niedrigste Luftfeuchtigkeit','humidity','%',false],['Höchster Luftdruck','pressure','hPa',true],['Niedrigster Luftdruck','pressure','hPa',false],['Stärkster gemessener Wind','windSpeed','km/h',true],['Höchster UV-Wert','uvIndex','',true]];
+    target.innerHTML = `<div class="page-heading"><div><h2>Analyse</h2><p>Ausgewertete Wetterdaten aus ${rows.length.toLocaleString('de-DE')} Messpunkten</p></div><span class="data-note">Keine künstlichen Werte</span></div>
+    <section class="data-section"><div class="section-heading"><div class="section-title"><i class="fas fa-scale-balanced"></i><h2>Wettervergleich</h2></div></div><div class="compare-table">${comparePeriod('Heute vs. gestern',today,yesterday,'gestern')}${comparePeriod('Diese Woche vs. letzte Woche',week,prevWeek,'letzte Woche')}${comparePeriod('Dieser Monat vs. letzter Monat',month,prevMonth,'letzter Monat')}</div></section>
+    <section class="analysis-columns"><div class="data-section"><div class="section-heading"><div class="section-title"><i class="fas fa-chart-simple"></i><h2>Statistiken</h2></div></div><div class="stat-card"><h3>Temperatur · heute</h3>${statBlock(today,'temperature','°C')}</div><div class="stat-card"><h3>Temperatur · 7 Tage</h3>${statBlock(periodRows(rows,7),'temperature','°C')}</div><div class="stat-card"><h3>Temperatur · 30 Tage</h3>${statBlock(periodRows(rows,30),'temperature','°C')}</div></div><div class="data-section"><div class="section-heading"><div class="section-title"><i class="fas fa-trophy"></i><h2>Rekorde</h2></div></div><div class="record-list">${records.map(([label,key,unit,max])=>{const candidates=rows.filter(r=>valid(r[key])); const item=candidates.length?candidates.reduce((a,b)=>max?(Number(b[key])>Number(a[key])?b:a):(Number(b[key])<Number(a[key])?b:a)):null; return `<div class="record-item"><span>${label}</span><strong>${item?fmt(item[key],unit):'Nicht verfügbar'}</strong><small>${item?dateTimeFmt(item.timestamp):'Noch keine Daten'}</small></div>`}).join('')}</div></div></section>
+    <section class="data-section"><div class="section-heading"><div class="section-title"><i class="fas fa-arrows-left-right-to-line"></i><h2>Zusammenhänge</h2></div><span class="data-note">Pearson-Korrelation · nur bei ausreichenden Daten</span></div><div class="correlation-grid">${[['temperature','humidity','Temperatur ↔ Luftfeuchtigkeit'],['temperature','pressure','Temperatur ↔ Luftdruck'],['temperature','uvIndex','Temperatur ↔ UV-Index']].map(([a,b,label])=>{const pairs=rows.filter(r=>valid(r[a])&&valid(r[b])); return `<div class="correlation-item"><h3>${label}</h3>${pairs.length<10?emptyState('Mindestens 10 gemeinsame Messpunkte erforderlich.'):`<div class="correlation-value">${correlation(pairs,a,b).toFixed(2)}</div><small>${pairs.length} gemeinsame Messpunkte · ${correlationLabel(correlation(pairs,a,b))}</small>`}</div>`}).join('')}</div></section>`;
+}
+function correlation(rows,a,b){const x=numeric(rows,a),y=numeric(rows,b),xm=mean(x),ym=mean(y);const n=Math.min(x.length,y.length);let num=0,dx=0,dy=0;for(let i=0;i<n;i++){num+=(x[i]-xm)*(y[i]-ym);dx+=(x[i]-xm)**2;dy+=(y[i]-ym)**2;}return dx&&dy?num/Math.sqrt(dx*dy):0;}
+function correlationLabel(v){return Math.abs(v)<.2?'kaum':Math.abs(v)<.5?'schwach':Math.abs(v)<.8?'moderat':'stark';}
+function augmentAnalysisRecords(){const list=document.querySelector('#analysis-view .record-list');if(!list||!extendedHistoryData.length)return;let pressureChange=null;for(let i=1;i<extendedHistoryData.length;i++){const a=extendedHistoryData[i-1],b=extendedHistoryData[i];if(valid(a.pressure)&&valid(b.pressure)){const change=Number(b.pressure)-Number(a.pressure);if(!pressureChange||Math.abs(change)>Math.abs(pressureChange.change))pressureChange={change,row:b};}}const rainDays={};extendedHistoryData.forEach(r=>{if(valid(r.rainLast24h)){const d=new Date(r.timestamp).toISOString().slice(0,10);rainDays[d]=(rainDays[d]||0)+Number(r.rainLast24h);}});const rainiest=Object.entries(rainDays).sort((a,b)=>b[1]-a[1])[0];list.insertAdjacentHTML('beforeend',`<div class="record-item"><span>Stärkste Luftdruckänderung</span><strong>${pressureChange?fmt(Math.abs(pressureChange.change),'hPa'):'Nicht verfügbar'}</strong><small>${pressureChange?dateTimeFmt(pressureChange.row.timestamp):'Noch keine Daten'}</small></div><div class="record-item"><span>Regenreichster Tag</span><strong>${rainiest?fmt(rainiest[1],'mm'):'Nicht verfügbar'}</strong><small>${rainiest?dateFmt(new Date(rainiest[0]).getTime()):'Noch keine Daten'}</small></div>`);}
+function renderHistory(){const target=document.getElementById('history-view');if(!target)return;let rows=periodRows(extendedHistoryData,historyViewRange==='all'?'all':Number(historyViewRange));if(historyQuery)rows=rows.filter(r=>JSON.stringify(r).toLowerCase().includes(historyQuery.toLowerCase()));const fields=[['timestamp','Datum'],['temperature','Temperatur'],['humidity','Feuchte'],['pressure','Druck'],['windSpeed','Wind'],['uvIndex','UV'],['rainLast24h','Regen']];target.innerHTML=`<div class="page-heading"><div><h2>Historie</h2><p>Roh- und Messdaten langfristig durchsuchen und exportieren</p></div><div class="page-actions"><button class="secondary-btn" data-export="csv"><i class="fas fa-download"></i> CSV</button><button class="secondary-btn" data-export="json"><i class="fas fa-code"></i> JSON</button></div></div><section class="data-section"><div class="history-toolbar"><div class="range-tabs">${[['1','24 Stunden'],['7','7 Tage'],['30','30 Tage'],['90','3 Monate'],['365','1 Jahr'],['all','Alle Daten']].map(([v,l])=>`<button class="tab-btn ${String(historyViewRange)===v?'active':''}" data-history-range="${v}">${l}</button>`).join('')}</div><input class="data-input" id="history-search" value="${esc(historyQuery)}" placeholder="Messpunkte suchen …" aria-label="Historie durchsuchen"></div><div class="heatmap-strip">${buildHeatmap(rows)}</div><div class="table-wrap"><table class="data-table"><thead><tr>${fields.map(([,label])=>`<th>${label}</th>`).join('')}</tr></thead><tbody>${rows.slice(-500).reverse().map(r=>`<tr>${fields.map(([key])=>`<td>${key==='timestamp'?dateTimeFmt(r.timestamp):fmt(r[key],key==='temperature'?'°C':key==='humidity'?'%':key==='pressure'?'hPa':key==='windSpeed'?'km/h':key==='rainLast24h'?'mm':'')}</td>`).join('')}</tr>`).join('')||`<tr><td colspan="7">${emptyState()}</td></tr>`}</tbody></table></div><p class="table-meta">${rows.length.toLocaleString('de-DE')} Messpunkte · maximal 500 angezeigt</p></section></div>`;}
+function buildHeatmap(rows){const byDay={};rows.forEach(r=>{const key=new Date(r.timestamp).toISOString().slice(0,10);(byDay[key]??=[]).push(r.temperature)});const days=Object.entries(byDay).slice(-31);return days.length?days.map(([day,values])=>`<div class="heat-day" title="${day}: ${fmt(mean(values),'°C')}" style="--heat:${Math.min(1,Math.max(0,(mean(values)+10)/45))}"><span>${new Date(day).getDate()}</span></div>`).join(''):emptyState('Keine Tagesdaten für die Heatmap vorhanden.');}
+function exportExtended(format){const rows=extendedHistoryData;if(!rows.length)return alert('Keine Daten vorhanden.');let blob,name;if(format==='json'){blob=new Blob([JSON.stringify(rows,null,2)],{type:'application/json'});name='wetter_historie.json';}else{const keys=[...new Set(rows.flatMap(r=>Object.keys(r)))];const csv=[keys.join(';'),...rows.map(r=>keys.map(k=>JSON.stringify(r[k]??'')).join(';'))].join('\n');blob=new Blob([csv],{type:'text/csv;charset=utf-8'});name='wetter_historie.csv';}const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();URL.revokeObjectURL(a.href);}
+function renderSensors(){const target=document.getElementById('sensors-view');if(!target)return;const d=latestStationData||{};const age=d.timestamp?Math.max(0,Date.now()-(Number(d.timestamp)<1e12?Number(d.timestamp)*1000:Number(d.timestamp))):null;const online=age!==null&&age<300000;const sensors=[['DHT11 / BME280','temperature','humidity','Temperatur, Luftfeuchtigkeit'],['BMP180 / BMP085','pressure','temperature','Luftdruck, Temperatur'],['AS5600','windDirectionDeg',null,'Windrichtung'],['KY-003 / Windsensor','windSpeed',null,'Windgeschwindigkeit']];target.innerHTML=`<div class="page-heading"><div><h2>Sensoren</h2><p>Technische Überwachung und Diagnose der verfügbaren Messkanäle</p></div><span class="status-chip ${online?'':'offline'}"><span class="status-dot"></span>${online?'Online':'Offline'}</span></div><div class="sensor-grid">${sensors.map(([name,a,b,desc])=>{const has=valid(d[a])||valid(d[b]);return `<article class="sensor-panel"><div class="sensor-head"><div><h3>${name}</h3><small>${desc}</small></div><span class="sensor-state ${has?'ok':'unknown'}">${has?'Messwert vorhanden':'Nicht verfügbar'}</span></div><div class="sensor-values"><div><small>${a}</small><strong>${fmt(d[a],a==='temperature'?'°C':a==='humidity'?'%':a==='pressure'?'hPa':a==='windSpeed'?'km/h':'°')}</strong></div>${b?`<div><small>${b}</small><strong>${fmt(d[b],b==='temperature'?'°C':b==='humidity'?'%':'hPa')}</strong></div>`:''}</div><dl class="diagnostics"><div><dt>Letzte Antwort</dt><dd>${dateTimeFmt(d.timestamp)}</dd></div><div><dt>Fehleranzahl</dt><dd>Nicht übermittelt</dd></div><div><dt>Kommunikation</dt><dd>${online?'Aktiv':'Keine aktuelle Antwort'}</dd></div></dl></article>`}).join('')}</div><section class="data-section"><div class="section-heading"><div class="section-title"><i class="fas fa-list-check"></i><h2>Ereignisprotokoll</h2></div></div>${emptyState('Die aktuelle Datenstruktur übermittelt kein Sensor-Ereignisprotokoll.')}</section>`;}
+function renderSettings(){const target=document.getElementById('settings-view');if(!target)return;const cfg=JSON.parse(localStorage.getItem('weatherstation-settings')||'{}');target.innerHTML=`<div class="page-heading"><div><h2>Einstellungen</h2><p>Konfiguration der Station und der Darstellung</p></div></div><div class="settings-grid"><section class="data-section"><h3>Wetterstation</h3><label>Stationsname<input class="data-input" data-setting="stationName" value="${esc(cfg.stationName||'Wetterstation')}"></label><label>Standort<input class="data-input" data-setting="location" value="${esc(cfg.location||'Freiburg im Breisgau')}"></label><label>Höhe (m)<input class="data-input" data-setting="elevation" type="number" value="${esc(cfg.elevation||'')}"></label><label>Zeitzone<input class="data-input" data-setting="timezone" value="${esc(cfg.timezone||'Europe/Berlin')}"></label></section><section class="data-section"><h3>Einheiten</h3>${[['temperature','Temperatur','°C'],['pressure','Luftdruck','hPa'],['wind','Wind','km/h'],['rain','Niederschlag','mm']].map(([key,label,defaultValue])=>`<label>${label}<select class="data-input" data-setting="${key}"><option>${defaultValue}</option><option>${key==='temperature'?'°F':key==='pressure'?'inHg':key==='wind'?'m/s':'inch'}</option></select></label>`).join('')}<p class="form-note">Einheiten werden gespeichert. Die bestehenden Sensorwerte werden nicht verändert.</p></section><section class="data-section"><h3>Dashboard-Konfiguration</h3><label class="check-row"><input type="checkbox" data-setting="showUv" ${cfg.showUv===false?'':'checked'}> UV-Index auf der Übersicht anzeigen</label><label class="check-row"><input type="checkbox" data-setting="showRain" ${cfg.showRain===false?'':'checked'}> Niederschlag auf der Übersicht anzeigen</label><button class="primary-btn" id="save-settings">Einstellungen speichern</button></section><section class="data-section"><h3>Datenverwaltung</h3><p class="form-note">Die Datenverwaltung betrifft nur lokale Einstellungen. Firebase-Daten werden hier nicht gelöscht.</p><div class="page-actions"><button class="secondary-btn" data-export="csv">CSV exportieren</button><button class="secondary-btn" data-export="json">JSON exportieren</button></div></section></div>`;}
+function createExtendedViews(){const main=document.querySelector('.main-content');if(!main||document.getElementById('analysis-view'))return;['analysis','history','sensors','settings'].forEach(view=>{const section=document.createElement('div');section.id=`${view}-view`;section.className='page-view';section.hidden=true;main.appendChild(section);});const nav=document.querySelector('.side-nav');if(nav){nav.innerHTML=`<button class="nav-item active" data-view="overview"><i class="fas fa-house"></i><span>Übersicht</span></button><button class="nav-item" data-view="analysis"><i class="fas fa-chart-line"></i><span>Analyse</span></button><button class="nav-item" data-view="history"><i class="far fa-calendar"></i><span>Historie</span></button><button class="nav-item" data-view="sensors"><i class="fas fa-microchip"></i><span>Sensoren</span></button><button class="nav-item" data-view="settings"><i class="fas fa-gear"></i><span>Einstellungen</span></button>`;nav.addEventListener('click',e=>{const btn=e.target.closest('[data-view]');if(!btn)return;const view=btn.dataset.view;document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b===btn));document.querySelectorAll('.main-content>section,.main-content>.page-view').forEach(el=>{el.hidden=view!=='overview'&&el.id!=='overview-view'?true:false;});const overviewSections=[...main.querySelectorAll(':scope>section')];overviewSections.forEach(el=>el.hidden=view!=='overview');document.querySelectorAll('.page-view').forEach(el=>el.hidden=el.id!==`${view}-view`);if(view==='analysis')renderAnalysis();if(view==='history')renderHistory();if(view==='sensors')renderSensors();if(view==='settings')renderSettings();});}}
+document.addEventListener('click',e=>{const range=e.target.closest('[data-history-range]');if(range){historyViewRange=range.dataset.historyRange;renderHistory();}const exp=e.target.closest('[data-export]');if(exp)exportExtended(exp.dataset.export);if(e.target.id==='save-settings'){const cfg={};document.querySelectorAll('[data-setting]').forEach(el=>cfg[el.dataset.setting]=el.type==='checkbox'?el.checked:el.value);localStorage.setItem('weatherstation-settings',JSON.stringify(cfg));e.target.textContent='Gespeichert';setTimeout(()=>e.target.textContent='Einstellungen speichern',1200);}});
+document.addEventListener('input',e=>{if(e.target.id==='history-search'){historyQuery=e.target.value;renderHistory();const input=document.getElementById('history-search');if(input){input.focus();input.setSelectionRange(historyQuery.length,historyQuery.length);}}});
+async function loadExtendedHistory(){try{const res=await fetch(`${FIREBASE_BASE}/historie.json`);if(res.ok){const data=await res.json();if(data)extendedHistoryData=Object.values(data).map(r=>({...r,timestamp:Number(r.timestamp)<1e12?Number(r.timestamp)*1000:Number(r.timestamp)})).filter(r=>Number.isFinite(r.timestamp)).sort((a,b)=>a.timestamp-b.timestamp);}}catch(e){console.warn('Langzeit-Historie nicht verfügbar',e);}if(!extendedHistoryData.length)extendedHistoryData=rawHistoryData;}
+const originalLoadLive=loadLive;loadLive=async function(){await originalLoadLive();try{const res=await fetch(FIREBASE_LATEST);if(res.ok)latestStationData=await res.json();}catch(e){/* bestehende Verbindung bleibt unverändert */}};
+const originalInitDashboard=initDashboard;initDashboard=async function(){createExtendedViews();await originalInitDashboard();await loadExtendedHistory();};
+createExtendedViews();
+loadExtendedHistory();
+fetch(FIREBASE_LATEST).then(r => r.ok ? r.json() : null).then(data => { if (data) latestStationData = data; }).catch(() => {});

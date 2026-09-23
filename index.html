@@ -1,223 +1,28 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Echtzeit-Wetterdaten von meiner ESP32-Wetterstation – Temperatur, Luftdruck, Windrose und mehr.">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Wetter Analytics Dashboard</title>
-
-    <link rel="manifest" href="manifest.json?v=12">
-    <meta name="theme-color" content="#0b0e14">
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <link rel="stylesheet" href="style.css?v=12">
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Echtzeit-Wetterdaten der Wetterstation"><meta name="theme-color" content="#f7faff">
+    <title>Wetterstation - Messübersicht</title>
+    <link rel="manifest" href="manifest.json?v=12"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><link rel="stylesheet" href="style.css?v=12">
 </head>
-<body>
-
-    <!-- Glassmorphism Ambient Glows -->
-    <div class="ambient-glow blob-1"></div>
-    <div class="ambient-glow blob-2"></div>
-    <div class="ambient-glow blob-3"></div>
-
-    <div class="dashboard-container">
-        
-        <div class="dashboard-header-container">
-            <h1 class="dashboard-header">Wetter Analytics Dashboard</h1>
-            <button id="pwa-install-btn" class="pwa-btn" style="display: none;">
-                <i class="fas fa-download"></i> App installieren
-            </button>
-        </div>
-
-        <div class="connection-banner" id="connection-banner">
-            <i class="fas fa-exclamation-triangle"></i> Keine Verbindung zur Datenbank – Angezeigte Werte sind veraltet
-        </div>
-
-        <div class="dashboard-grid">
-
-            <!-- Linke Spalte: Aktuelle Messwerte -->
-            <div class="left-column">
-                <div class="glass-card orange-card">
-                    <div class="header-row">
-                        <div>
-                            <i class="fas fa-satellite-dish"></i> Wetterstation
-                            <span id="wifi-status" class="wifi-status" title="WLAN-Signal"><i class="fas fa-wifi"></i> <span id="rssi-val">--</span> dBm</span>
-                        </div>
-                        <div id="last-update">Update: --:--</div>
-                    </div>
-                    <div class="warning-badges" id="warning-badges">
-                        <div class="badge" id="badge-frost"><i class="fas fa-snowflake"></i> Frost-Warnung</div>
-                        <div class="badge" id="badge-storm"><i class="fas fa-wind"></i> Rascher Druckfall</div>
-                    </div>
-                    <div class="temp-large" id="temp-main">-- °C</div>
-                    <div class="calculated-pills">
-                        <div class="pill"><span>Gefühlte Temp.</span><strong id="feels-like">-- °C</strong></div>
-                        <div class="pill"><span>Taupunkt</span><strong id="dew-point">-- °C</strong></div>
-                        <div class="pill span-2"><span>Sonne (Mitte DE)</span><strong id="sun-times"><i class="fas fa-sun"></i> --:-- &nbsp; <i class="fas fa-moon"></i> --:--</strong></div>
-                        <div class="pill"><span>System-Uptime</span><strong id="uptime-val">--</strong></div>
-                        <div class="pill"><span>Druck-Trend (3h)</span><strong id="pressure-trend">--</strong></div>
-                    </div>
-                </div>
-
-                <div class="metrics-grid">
-                    <!-- Gauge: Luftfeuchtigkeit -->
-                    <div class="glass-card metric-card interactive-hover">
-                        <div class="metric-title">Luftfeuchtigkeit</div>
-                        <div class="gauge-container">
-                            <svg viewBox="0 0 100 100">
-                                <circle class="gauge-bg" cx="50" cy="50" r="40"></circle>
-                                <circle class="gauge-value" id="gauge-hum" cx="50" cy="50" r="40" style="stroke: #3b82f6;"></circle>
-                            </svg>
-                            <div class="gauge-center">
-                                <i class="fas fa-tint" style="color: #3b82f6;"></i>
-                                <div class="metric-value" id="hum-val">-- %</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Gauge: Luftdruck -->
-                    <div class="glass-card metric-card interactive-hover">
-                        <div class="metric-title">Luftdruck</div>
-                        <div class="gauge-container">
-                            <svg viewBox="0 0 100 100">
-                                <circle class="gauge-bg" cx="50" cy="50" r="40"></circle>
-                                <circle class="gauge-value" id="gauge-press" cx="50" cy="50" r="40" style="stroke: #10b981;"></circle>
-                            </svg>
-                            <div class="gauge-center">
-                                <i class="fas fa-tachometer-alt" style="color: #10b981;"></i>
-                                <div class="metric-value" id="press-val">-- hPa</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Card: Windrichtung (Ohne Gauge, da Kompass) -->
-                    <div class="glass-card metric-card interactive-hover">
-                        <div class="metric-title">Windrichtung</div>
-                        <div class="gauge-container">
-                            <div class="gauge-center static-center">
-                                <i class="far fa-compass" style="color: #8b5cf6; font-size: 28px;"></i>
-                                <div class="metric-value" id="wind-dir-val">--</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Gauge: Windgeschwindigkeit -->
-                    <div class="glass-card metric-card interactive-hover">
-                        <div class="metric-title">Windgeschw.</div>
-                        <div class="gauge-container">
-                            <svg viewBox="0 0 100 100">
-                                <circle class="gauge-bg" cx="50" cy="50" r="40"></circle>
-                                <circle class="gauge-value" id="gauge-windspeed" cx="50" cy="50" r="40" style="stroke: #a855f7;"></circle>
-                            </svg>
-                            <div class="gauge-center">
-                                <i class="fas fa-wind" style="color: #a855f7;"></i>
-                                <div class="metric-value" id="wind-speed-val">--</div>
-                            </div>
-                        </div>
-                        <div class="offline-tag" id="wind-speed-tag" style="display:none;">Offline</div>
-                    </div>
-
-                    <!-- Gauge: UV Index -->
-                    <div class="glass-card metric-card interactive-hover">
-                        <div class="metric-title">UV Index</div>
-                        <div class="gauge-container">
-                            <svg viewBox="0 0 100 100">
-                                <circle class="gauge-bg" cx="50" cy="50" r="40"></circle>
-                                <circle class="gauge-value" id="gauge-uv" cx="50" cy="50" r="40" style="stroke: #f59e0b;"></circle>
-                            </svg>
-                            <div class="gauge-center">
-                                <i class="fas fa-sun" style="color: #f59e0b;"></i>
-                                <div class="metric-value" id="uv-val">--</div>
-                            </div>
-                        </div>
-                        <div class="offline-tag" id="uv-tag" style="display:none;">Offline</div>
-                    </div>
-
-                    <!-- Gauge: Niederschlag -->
-                    <div class="glass-card metric-card interactive-hover">
-                        <div class="metric-title">Niederschlag (24h)</div>
-                        <div class="gauge-container">
-                            <svg viewBox="0 0 100 100">
-                                <circle class="gauge-bg" cx="50" cy="50" r="40"></circle>
-                                <circle class="gauge-value" id="gauge-rain" cx="50" cy="50" r="40" style="stroke: #06b6d4;"></circle>
-                            </svg>
-                            <div class="gauge-center">
-                                <i class="fas fa-cloud-rain" style="color: #06b6d4;"></i>
-                                <div class="metric-value" id="rain-val">--</div>
-                            </div>
-                        </div>
-                        <div class="offline-tag" id="rain-tag" style="display:none;">Offline</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Rechte Spalte: Historie & Interaktive Diagramme -->
-            <div class="right-column">
-
-                <div class="days-grid" id="days-history-grid">
-                    <div class="glass-card day-card skeleton-card"><div class="day-name skeleton-text">&nbsp;</div><div class="day-temp skeleton-text">&nbsp;</div></div>
-                    <div class="glass-card day-card skeleton-card"><div class="day-name skeleton-text">&nbsp;</div><div class="day-temp skeleton-text">&nbsp;</div></div>
-                    <div class="glass-card day-card skeleton-card"><div class="day-name skeleton-text">&nbsp;</div><div class="day-temp skeleton-text">&nbsp;</div></div>
-                </div>
-
-                <div class="glass-card chart-section">
-                    <div class="chart-controls">
-                        <div class="chart-tabs" id="chart-metric-tabs">
-                            <button class="tab-btn active" data-metric="temperature">Temp</button>
-                            <button class="tab-btn" data-metric="humidity">Feuchte</button>
-                            <button class="tab-btn" data-metric="pressure">Druck</button>
-                            <button class="tab-btn" data-metric="windDirectionDeg">Windrose</button>
-                            <button class="tab-btn" data-metric="uvIndex">UV</button>
-                            <button class="tab-btn" data-metric="rainLast24h">Regen</button>
-                        </div>
-
-                        <div class="timeframe-tabs" id="chart-timeframe-tabs">
-                            <button class="tab-btn timeframe-btn" data-timeframe="1h">1 Std</button>
-                            <button class="tab-btn timeframe-btn active" data-timeframe="24h">24 Std</button>
-                            <button class="tab-btn timeframe-btn" data-timeframe="7d">7 Tage</button>
-                            <button class="tab-btn timeframe-btn" data-timeframe="all">Allzeit</button>
-                            <input type="date" id="date-picker" class="date-picker">
-                            <button class="tab-btn export-btn" data-action="export-csv"><i class="fas fa-download"></i> CSV</button>
-                        </div>
-                    </div>
-
-                    <div class="shift-container">
-                        <div class="shift-tabs" id="chart-shift-tabs">
-                            <span style="font-size: 11px; color: var(--text-muted); margin-right: 5px;">Wischen/Zoom auf Chart aktiv</span>
-                            <button class="tab-btn" data-shift="1"><i class="fas fa-chevron-left"></i> -1h</button>
-                            <button class="tab-btn" data-shift="-1">+1h <i class="fas fa-chevron-right"></i></button>
-                            <button class="tab-btn" data-shift="24"><i class="fas fa-angle-double-left"></i> -24h</button>
-                            <button class="tab-btn" data-action="reset-shift"><i class="fas fa-undo"></i> Aktuell</button>
-                        </div>
-                        <div class="shift-status" id="shift-status-tag">Lade...</div>
-                    </div>
-
-                    <div class="chart-canvas-container" id="chartContainer">
-                        <canvas id="mainChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="glass-card">
-                    <div class="history-list-title">
-                        <span>Gemessene Tages-Extreme (Min / Max)</span>
-                        <i class="fas fa-temperature-half" style="color: var(--text-muted)"></i>
-                    </div>
-                    <div class="history-grid-container" id="min-max-grid">
-                        <div class="glass-card min-max-card skeleton-card"><div class="date skeleton-text">&nbsp;</div><div class="min-max-values skeleton-text">&nbsp;</div></div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-    <script src="app.js?v=12"></script>
-</body>
-</html>
+<body><div class="app-shell">
+    <aside class="sidebar"><div class="sidebar-brand"><div class="brand-symbol"><i class="fas fa-cloud-sun"></i></div><span>Wetterstation</span></div><nav class="side-nav" aria-label="Hauptnavigation"><button class="nav-item active"><i class="fas fa-house"></i><span>Übersicht</span></button><button class="nav-item"><i class="fas fa-chart-line"></i><span>Verlauf</span></button><button class="nav-item"><i class="fas fa-gear"></i><span>Einstellungen</span></button><button class="nav-item"><i class="fas fa-microchip"></i><span>Sensoren</span></button></nav><div class="sidebar-footer"><div class="theme-control"><span><i class="fas fa-circle-half-stroke"></i> Darstellung</span><button id="theme-toggle" class="theme-toggle" aria-label="Dark Mode umschalten"><i class="fas fa-moon"></i></button></div><div class="sidebar-status"><span class="status-dot"></span><span id="sidebar-connection-label">Online</span><small id="sidebar-last-update">Letzte Messung: --:--</small></div></div></aside>
+    <main class="main-content">
+        <header class="site-header"><div><h1 class="dashboard-header">Wetterstation</h1><p class="station-location"><i class="fas fa-location-dot"></i> Freiburg im Breisgau</p></div><div class="header-meta"><span class="status-chip"><span class="status-dot"></span><span id="connection-label">Online</span></span><span class="last-seen" id="last-update">Letzte Messung: --:--</span><span class="wifi-status" id="wifi-status" title="WLAN-Signal"><i class="fas fa-wifi"></i> <span id="rssi-val">--</span> dBm</span><button id="pwa-install-btn" class="pwa-btn" style="display:none"><i class="fas fa-download"></i></button></div></header>
+        <div class="connection-banner" id="connection-banner"><i class="fas fa-triangle-exclamation"></i> Keine Verbindung - Angezeigte Werte können veraltet sein</div>
+        <section class="conditions-section" aria-labelledby="conditions-title"><div class="sr-only" id="conditions-title">Aktuelle Bedingungen</div><div class="conditions-panel">
+            <div class="metric-tile temperature-block"><div class="metric-label"><i class="fas fa-temperature-half"></i> Temperatur</div><div class="temp-large" id="temp-main">-- °C</div><div class="temp-support"><span>Gefühlt <strong id="feels-like">-- °C</strong></span><span>Taupunkt <strong id="dew-point">-- °C</strong></span></div><div class="warning-badges" id="warning-badges"><div class="badge" id="badge-frost"><i class="fas fa-snowflake"></i> Frostwarnung</div><div class="badge" id="badge-storm"><i class="fas fa-wind"></i> Rascher Druckfall</div></div></div>
+            <div class="metric-tile primary-reading"><span class="metric-label"><i class="fas fa-droplet"></i> Luftfeuchtigkeit</span><strong id="hum-val">-- %</strong><span class="reading-context">Relative Feuchte</span><div class="trend-up">↑ +1.2 %</div><svg class="mini-progress" viewBox="0 0 100 4" preserveAspectRatio="none"><rect width="100" height="4" rx="2"></rect><rect id="gauge-hum" width="0" height="4" rx="2"></rect></svg></div>
+            <div class="metric-tile primary-reading"><span class="metric-label"><i class="fas fa-gauge-high"></i> Luftdruck</span><strong id="press-val">-- hPa</strong><span class="reading-context">Letzte Stunde</span><div class="trend-down" id="pressure-trend">--</div><svg class="mini-progress" viewBox="0 0 100 4" preserveAspectRatio="none"><rect width="100" height="4" rx="2"></rect><rect id="gauge-press" width="0" height="4" rx="2"></rect></svg></div>
+            <div class="metric-tile compact-reading"><span class="metric-label"><i class="fas fa-compass"></i> Windrichtung</span><strong id="wind-dir-val">--</strong><span class="reading-context">Aktuelle Richtung</span></div>
+            <div class="metric-tile compact-reading"><span class="metric-label"><i class="fas fa-sun"></i> UV-Index</span><strong id="uv-val">--</strong><span class="reading-context">niedrig</span><span class="offline-tag" id="uv-tag" style="display:none">Offline</span></div>
+        </div></section>
+        <section class="chart-section"><div class="section-heading"><div><div class="section-title"><i class="fas fa-chart-line"></i><h2>Temperaturverlauf</h2></div></div><div class="chart-caption" id="shift-status-tag">Aktuelle Daten</div></div><div class="chart-controls"><div class="chart-tabs" id="chart-metric-tabs"><button class="tab-btn active" data-metric="temperature">Temperatur</button><button class="tab-btn" data-metric="humidity">Luftfeuchtigkeit</button><button class="tab-btn" data-metric="pressure">Luftdruck</button><button class="tab-btn" data-metric="windDirectionDeg">Wind</button><button class="tab-btn" data-metric="uvIndex">UV</button><button class="tab-btn" data-metric="rainLast24h">Niederschlag</button></div><div class="timeframe-tabs" id="chart-timeframe-tabs"><button class="tab-btn timeframe-btn" data-timeframe="1h">1 Std</button><button class="tab-btn timeframe-btn active" data-timeframe="24h">24 Std</button><button class="tab-btn timeframe-btn" data-timeframe="7d">7 Tage</button><button class="tab-btn timeframe-btn" data-timeframe="all">Alle Zeit</button><input type="date" id="date-picker" class="date-picker"><button class="tab-btn export-btn" data-action="export-csv"><i class="fas fa-download"></i></button></div></div><div class="shift-container"><div class="shift-tabs" id="chart-shift-tabs"><span>Zeitraum verschieben</span><button class="tab-btn" data-shift="1"><i class="fas fa-chevron-left"></i></button><button class="tab-btn" data-shift="-1"><i class="fas fa-chevron-right"></i></button><button class="tab-btn" data-shift="24"><i class="fas fa-angles-left"></i></button><button class="tab-btn" data-action="reset-shift"><i class="fas fa-rotate-left"></i> Aktuell</button></div></div><div class="chart-canvas-container" id="chartContainer"><canvas id="mainChart"></canvas></div></section>
+        <section class="readings-section"><div class="section-heading"><div class="section-title"><i class="fas fa-umbrella"></i><h2>Weitere Messwerte</h2></div></div><div class="readings-strip"><div class="reading-card compass-card"><span class="metric-label">Windrichtung</span><div class="compass"><span>N</span><span>O</span><span>S</span><span>W</span><div class="compass-needle"></div><div class="compass-center"></div></div></div><div class="reading-card"><span class="metric-label">Windgeschwindigkeit</span><strong id="wind-speed-val">--</strong><small>km/h</small><div class="reading-icon"><i class="fas fa-wind"></i></div><span class="offline-tag" id="wind-speed-tag" style="display:none">Offline</span></div><div class="reading-card"><span class="metric-label">UV-Index</span><strong class="reading-value-copy">0</strong><small>(niedrig)</small><div class="reading-icon"><i class="fas fa-sun"></i></div></div><div class="reading-card"><span class="metric-label">Niederschlag</span><strong id="rain-val">--</strong><small>letzte 24 h</small><div class="reading-icon"><i class="fas fa-cloud-rain"></i></div><span class="offline-tag" id="rain-tag" style="display:none">Offline</span></div><div class="reading-card sun-reading"><span class="metric-label">Sonnenaufgang</span><strong class="sunrise-value">--:--</strong><div class="reading-icon"><i class="fas fa-sun"></i></div></div><div class="reading-card sun-reading"><span class="metric-label">Sonnenuntergang</span><strong class="sunset-value">--:--</strong><div class="reading-icon"><i class="fas fa-sun"></i></div></div><div class="reading-card"><span class="metric-label">Taupunkt</span><strong id="dew-point-copy">-- °C</strong><div class="reading-icon"><i class="fas fa-droplet"></i></div></div><div class="reading-card"><span class="metric-label">Luftdrucktrend</span><strong id="pressure-trend-copy">--</strong><div class="reading-icon"><i class="fas fa-arrow-trend-up"></i></div></div></div></section>
+        <section class="history-section"><div class="section-heading"><div class="section-title"><i class="far fa-calendar"></i><h2>Gemessene Tages-Extreme (Min / Max)</h2></div></div><div class="history-table"><div class="history-table-head"><span>Datum</span><span>Minimum</span><span>Maximum</span></div><div id="min-max-grid"><div class="min-max-card skeleton-card"><span class="skeleton-text">&nbsp;</span></div></div></div><div class="days-grid" id="days-history-grid" aria-hidden="true"></div></section>
+    </main>
+</div><script src="app.js?v=12"></script></body></html>
