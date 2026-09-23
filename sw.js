@@ -43,8 +43,12 @@ self.addEventListener('fetch', (e) => {
 
   // Lädt Dateien aus dem Cache; falls nicht vorhanden, über das Internet
   e.respondWith(
-    caches.match(e.request).then((response) => {
-      return response || fetch(e.request);
-    })
+    fetch(e.request).then((response) => {
+      if (response && response.ok && new URL(e.request.url).origin === self.location.origin) {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(e.request, copy));
+      }
+      return response;
+    }).catch(() => caches.match(e.request))
   );
 });
