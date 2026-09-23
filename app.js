@@ -43,12 +43,12 @@ const metricConfigs = {
 
 // Keep the chart palette restrained: orange is reserved for temperature, blue for measurements.
 Object.assign(metricConfigs, {
-    temperature: { color: '#d97706', bg: 'rgba(217, 119, 6, 0.08)' },
-    humidity: { color: '#2563a8', bg: 'rgba(37, 99, 168, 0.08)' },
-    pressure: { color: '#2563a8', bg: 'rgba(37, 99, 168, 0.08)' },
-    windDirectionDeg: { color: '#2563a8', bg: 'rgba(37, 99, 168, 0.08)' },
-    uvIndex: { color: '#2563a8', bg: 'rgba(37, 99, 168, 0.08)' },
-    rainLast24h: { color: '#2563a8', bg: 'rgba(37, 99, 168, 0.08)' }
+    temperature: { label: 'Temperatur (°C)', color: '#d97706', bg: 'rgba(217, 119, 6, 0.08)' },
+    humidity: { label: 'Luftfeuchtigkeit (%)', color: '#2563a8', bg: 'rgba(37, 99, 168, 0.08)' },
+    pressure: { label: 'Luftdruck (hPa)', color: '#2563a8', bg: 'rgba(37, 99, 168, 0.08)' },
+    windDirectionDeg: { label: 'Windrose (Grad)', color: '#2563a8', bg: 'rgba(37, 99, 168, 0.08)' },
+    uvIndex: { label: 'UV-Index', color: '#2563a8', bg: 'rgba(37, 99, 168, 0.08)' },
+    rainLast24h: { label: 'Niederschlag (mm)', color: '#2563a8', bg: 'rgba(37, 99, 168, 0.08)' }
 });
 
 // ============================================================================

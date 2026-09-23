@@ -1,14 +1,14 @@
 // Service Worker Cache-Name für die Progressive Web App
 // Bei jeder Änderung an den gecachten Dateien die Versionsnummer erhöhen!
-const CACHE_NAME = 'wetter-dashboard-v13';
+const CACHE_NAME = 'wetter-dashboard-v14';
 
 
 // Liste aller Dateien, die lokal auf dem Smartphone zwischengespeichert werden sollen
 const ASSETS = [
   './index.html',
-  './style.css?v=12',
-  './app.js?v=12',
-  './manifest.json?v=12'
+  './style.css',
+  './app.js',
+  './manifest.json'
 ];
 
 // Installation des Service Workers und Abspeichern der statischen Assets im Browser-Cache
